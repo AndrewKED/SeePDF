@@ -1,0 +1,58 @@
+object fMain: TfMain
+  Left = 0
+  Top = 0
+  Caption = 'KED PDF Viewer'
+  ClientHeight = 531
+  ClientWidth = 800
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object StatusBar: TStatusBar
+    Align = Bottom
+    Position.Y = 509
+    ShowSizeGrip = True
+    Size.Width = 800
+    Size.Height = 22
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object StatusLabel: TLabel
+      Align = Client
+      StyledSettings = [Family, Style, FontColor]
+      HitTest = False
+      Margins.Left = 8
+      Margins.Top = 2
+      Margins.Right = 8
+      Margins.Bottom = 2
+      Size.Width = 784
+      Size.Height = 18
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 11
+      Text = 'No document loaded'
+      TabOrder = 0
+    end
+  end
+  object bMenu: TButton
+    Position.X = 5
+    Position.Y = 5
+    Size.Width = 40
+    Size.Height = 40
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Text = #61641
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 12
+    OnClick = bMenuClick
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = 'pdf'
+    Filter = 'PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*'
+    Title = 'Open PDF File'
+    Left = 145
+    Top = 85
+  end
+end

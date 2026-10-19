@@ -1,0 +1,98 @@
+object fMenu: TfMenu
+  Left = 0
+  Top = 0
+  BorderStyle = None
+  Caption = 'fMenu'
+  ClientHeight = 283
+  ClientWidth = 195
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object bAbout: TButton
+    Position.X = 100
+    Position.Y = 10
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61530
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 0
+    OnClick = bAboutClick
+  end
+  object bOpenfile: TButton
+    Position.X = 10
+    Position.Y = 10
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61564
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 1
+    OnClick = bOpenfileClick
+  end
+  object bExit: TButton
+    Position.X = 100
+    Position.Y = 190
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61582
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 2
+    OnClick = bExitClick
+  end
+  object bSearch: TButton
+    Position.X = 10
+    Position.Y = 100
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61442
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 3
+    OnClick = bSearchClick
+  end
+  object bSettings: TButton
+    Position.X = 100
+    Position.Y = 100
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61459
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 4
+    OnClick = bSettingsClick
+  end
+  object bBack: TButton
+    Position.X = 10
+    Position.Y = 190
+    Size.Width = 80
+    Size.Height = 80
+    Size.PlatformDefault = False
+    Text = #61536
+    StyledSettings = [Style, FontColor]
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30
+    ModalResult = 1
+    TabOrder = 5
+    OnClick = bBackClick
+  end
+end
