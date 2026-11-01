@@ -1,0 +1,327 @@
+object fManageFiles: TfManageFiles
+  Left = 0
+  Top = 0
+  BorderIcons = []
+  BorderStyle = None
+  Caption = 'Form1'
+  ClientHeight = 466
+  ClientWidth = 1054
+  Position = ScreenCenter
+  WindowState = wsMaximized
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnActivate = FormActivate
+  DesignerMasterStyle = 0
+  object OpenDialog: TOpenDialog
+    Left = 335
+    Top = 30
+  end
+  object StringGrid1: TStringGrid
+    Align = Client
+    CanFocus = True
+    ClipChildren = True
+    Size.Width = 1054.000000000000000000
+    Size.Height = 235.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 1034.000000000000000000
+    Viewport.Height = 210.000000000000000000
+    object StringColumn1: TStringColumn
+      HorzAlign = Center
+      Header = 'Name'
+      HeaderSettings.StyledSettings = [Family, Size, FontColor]
+      HeaderSettings.TextSettings.Font.StyleExt = {00070000000000000004000000}
+      HeaderSettings.TextSettings.WordWrap = False
+      HeaderSettings.TextSettings.HorzAlign = Center
+    end
+    object StringColumn2: TStringColumn
+      OnGesture = StringColumn2Gesture
+      HorzAlign = Center
+      Header = 'Audio available'
+      HeaderSettings.StyledSettings = [Family, Size, FontColor]
+      HeaderSettings.TextSettings.Font.StyleExt = {00070000000000000004000000}
+      HeaderSettings.TextSettings.WordWrap = False
+      HeaderSettings.TextSettings.HorzAlign = Center
+    end
+  end
+  object pBottom: TPanel
+    Align = Bottom
+    Position.Y = 366.000000000000000000
+    Size.Width = 1054.000000000000000000
+    Size.Height = 100.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object pOptions: TPanel
+      Align = Client
+      Size.Width = 1054.000000000000000000
+      Size.Height = 100.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object bAdd: TButton
+        Align = Left
+        StyledSettings = [Style, FontColor]
+        Hint = 'Add'
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 10.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 6
+        Text = '+'
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = bAddClick
+      end
+      object bEdit: TButton
+        Align = Left
+        StyledSettings = [Style, FontColor]
+        Hint = 'Edit'
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 100.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 5
+        Text = #61508
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = bEditClick
+      end
+      object bDelete: TButton
+        Align = Left
+        StyledSettings = [Style, FontColor]
+        Hint = 'Delete'
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 190.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 4
+        Text = #61944
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object bSearch: TButton
+        Align = Left
+        StyledSettings = [Style, FontColor]
+        Hint = 'Search'
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 280.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Text = #61442
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object bAudio: TButton
+        Align = Left
+        StyledSettings = [Style, FontColor]
+        Hint = 'Audio'
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 370.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = #61441
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object Button1: TButton
+        Align = Right
+        StyledSettings = [Style, FontColor]
+        Hint = 'Close'
+        Margins.Top = 10.000000000000000000
+        Margins.Right = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 964.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = #61536
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = Button1Click
+      end
+    end
+    object pEdit: TPanel
+      Align = Right
+      Position.X = 865.000000000000000000
+      Size.Width = 189.000000000000000000
+      Size.Height = 100.000000000000000000
+      Size.PlatformDefault = False
+      Visible = False
+      TabOrder = 1
+      object bAccept: TButton
+        Align = Right
+        StyledSettings = [Style, FontColor]
+        Hint = 'Cancel'
+        Margins.Top = 10.000000000000000000
+        Margins.Right = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 9.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = #61452
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = bAcceptClick
+      end
+      object bCancel: TButton
+        Align = Right
+        StyledSettings = [Style, FontColor]
+        Hint = 'Cancel'
+        Margins.Top = 10.000000000000000000
+        Margins.Right = 10.000000000000000000
+        Margins.Bottom = 10.000000000000000000
+        Position.X = 99.000000000000000000
+        Position.Y = 10.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = #61453
+        TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+        TextSettings.Font.Size = 30.000000000000000000
+        TextSettings.Trimming = None
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = bCancelClick
+      end
+    end
+  end
+  object gbDetails: TGroupBox
+    Align = Bottom
+    Margins.Left = 10.000000000000000000
+    Margins.Top = 10.000000000000000000
+    Margins.Right = 10.000000000000000000
+    Margins.Bottom = 10.000000000000000000
+    Position.X = 10.000000000000000000
+    Position.Y = 245.000000000000000000
+    Size.Width = 1034.000000000000000000
+    Size.Height = 111.000000000000000000
+    Size.PlatformDefault = False
+    Text = ' Details '
+    TabOrder = 3
+    object eName: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 38
+      Position.X = 140.000000000000000000
+      Position.Y = 20.000000000000000000
+      Size.Width = 356.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object eAlternateNames: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 39
+      Position.X = 140.000000000000000000
+      Position.Y = 50.000000000000000000
+      Size.Width = 356.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object memNotes: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Anchors = [akLeft, akTop, akRight]
+      Position.X = 520.000000000000000000
+      Position.Y = 45.000000000000000000
+      Size.Width = 500.000000000000000000
+      Size.Height = 51.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 40
+      Viewport.Width = 496.000000000000000000
+      Viewport.Height = 47.000000000000000000
+    end
+    object Name: TLabel
+      Position.X = 20.000000000000000000
+      Position.Y = 23.000000000000000000
+      Size.Width = 66.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Name'
+      TabOrder = 45
+    end
+    object Label1: TLabel
+      Position.X = 20.000000000000000000
+      Position.Y = 53.000000000000000000
+      Size.Width = 111.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Alternative name/s'
+      TabOrder = 43
+    end
+    object Label2: TLabel
+      Position.X = 20.000000000000000000
+      Position.Y = 83.000000000000000000
+      Size.Width = 66.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Location'
+      TabOrder = 42
+    end
+    object Label3: TLabel
+      Position.X = 140.000000000000000000
+      Position.Y = 83.000000000000000000
+      Size.Width = 66.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Location'
+      TabOrder = 41
+    end
+    object Label4: TLabel
+      Position.X = 520.000000000000000000
+      Position.Y = 23.000000000000000000
+      Size.Width = 66.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Notes'
+      TabOrder = 44
+    end
+  end
+end

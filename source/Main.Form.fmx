@@ -1,10 +1,13 @@
 object fMain: TfMain
   Left = 0
   Top = 0
+  BorderIcons = []
+  BorderStyle = None
   Caption = 'KED PDF Viewer'
-  ClientHeight = 531
+  ClientHeight = 530
   ClientWidth = 800
   Position = ScreenCenter
+  WindowState = wsMaximized
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -12,40 +15,38 @@ object fMain: TfMain
   OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object StatusBar: TStatusBar
-    Align = Bottom
-    Position.Y = 509
+    Position.Y = 508.000000000000000000
     ShowSizeGrip = True
-    Size.Width = 800
-    Size.Height = 22
+    Size.Width = 800.000000000000000000
+    Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     object StatusLabel: TLabel
       Align = Client
       StyledSettings = [Family, Style, FontColor]
-      HitTest = False
-      Margins.Left = 8
-      Margins.Top = 2
-      Margins.Right = 8
-      Margins.Bottom = 2
-      Size.Width = 784
-      Size.Height = 18
+      Margins.Left = 8.000000000000000000
+      Margins.Top = 2.000000000000000000
+      Margins.Right = 8.000000000000000000
+      Margins.Bottom = 2.000000000000000000
+      Size.Width = 784.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
-      TextSettings.Font.Size = 11
+      TextSettings.Font.Size = 11.000000000000000000
       Text = 'No document loaded'
       TabOrder = 0
     end
   end
   object bMenu: TButton
-    Position.X = 5
-    Position.Y = 5
-    Size.Width = 40
-    Size.Height = 40
+    StyledSettings = [Style, FontColor]
+    Position.X = 5.000000000000000000
+    Position.Y = 5.000000000000000000
+    Size.Width = 40.000000000000000000
+    Size.Height = 40.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
     Text = #61641
-    StyledSettings = [Style, FontColor]
     TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
-    TextSettings.Font.Size = 12
+    TextSettings.Trimming = None
     OnClick = bMenuClick
   end
   object OpenDialog: TOpenDialog

@@ -1,0 +1,130 @@
+object fSettings: TfSettings
+  Left = 0
+  Top = 0
+  BorderIcons = []
+  BorderStyle = None
+  Caption = 'Form1'
+  ClientHeight = 226
+  ClientWidth = 514
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object gbPDFLocation: TGroupBox
+    Align = Bottom
+    Margins.Left = 5.000000000000000000
+    Margins.Top = 5.000000000000000000
+    Margins.Right = 5.000000000000000000
+    Position.X = 5.000000000000000000
+    Position.Y = 76.000000000000000000
+    Size.Width = 504.000000000000000000
+    Size.Height = 70.000000000000000000
+    Size.PlatformDefault = False
+    Text = ' PDF files location '
+    TabOrder = 1
+    object ePDFLocation: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Center
+      Anchors = [akLeft, akRight]
+      TabOrder = 38
+      ReadOnly = True
+      Size.Width = 414.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object bPDFLocation: TButton
+      Align = Right
+      StyledSettings = [Style, FontColor]
+      Margins.Top = 5.000000000000000000
+      Margins.Right = 5.000000000000000000
+      Margins.Bottom = 5.000000000000000000
+      Position.X = 439.000000000000000000
+      Position.Y = 5.000000000000000000
+      Size.Width = 60.000000000000000000
+      Size.Height = 60.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 39
+      Text = #61564
+      TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+      TextSettings.Font.Size = 30.000000000000000000
+      TextSettings.Trimming = None
+      OnClick = bPDFLocationClick
+    end
+  end
+  object GroupBox1: TGroupBox
+    Align = Bottom
+    Margins.Left = 5.000000000000000000
+    Margins.Top = 5.000000000000000000
+    Margins.Right = 5.000000000000000000
+    Margins.Bottom = 5.000000000000000000
+    Position.X = 5.000000000000000000
+    Position.Y = 151.000000000000000000
+    Size.Width = 504.000000000000000000
+    Size.Height = 70.000000000000000000
+    Size.PlatformDefault = False
+    Text = ' Audio files location '
+    TabOrder = 0
+    object eAudioLocation: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Center
+      Anchors = [akLeft, akRight]
+      TabOrder = 38
+      ReadOnly = True
+      Size.Width = 414.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object bAudioLocation: TButton
+      Align = Right
+      StyledSettings = [Style, FontColor]
+      Margins.Top = 5.000000000000000000
+      Margins.Right = 5.000000000000000000
+      Margins.Bottom = 5.000000000000000000
+      Position.X = 439.000000000000000000
+      Position.Y = 5.000000000000000000
+      Size.Width = 60.000000000000000000
+      Size.Height = 60.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 39
+      Text = #61564
+      TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+      TextSettings.Font.Size = 30.000000000000000000
+      TextSettings.Trimming = None
+      OnClick = bAudioLocationClick
+    end
+  end
+  object Layout1: TLayout
+    Align = Client
+    Margins.Left = 5.000000000000000000
+    Margins.Top = 5.000000000000000000
+    Margins.Right = 5.000000000000000000
+    Size.Width = 504.000000000000000000
+    Size.Height = 66.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 39
+    object Button1: TButton
+      Align = Left
+      Cancel = True
+      StyledSettings = [Style, FontColor]
+      ModalResult = 2
+      Margins.Left = 5.000000000000000000
+      Margins.Top = 5.000000000000000000
+      Position.X = 5.000000000000000000
+      Position.Y = 5.000000000000000000
+      Size.Width = 60.000000000000000000
+      Size.Height = 61.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 38
+      Text = #61536
+      TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+      TextSettings.Font.Size = 30.000000000000000000
+      TextSettings.Trimming = None
+    end
+  end
+  object OpenDialog: TOpenDialog
+    Left = 335
+    Top = 30
+  end
+end

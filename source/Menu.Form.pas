@@ -17,8 +17,8 @@ uses
 type
   TOperations = (
     OP_NONE,
-    OP_OPEN_FILE,
-    OP_SEARCH,
+    OP_FILES,
+    OP_SETS,
     OP_SETTINGS,
     OP_BACK,
     OP_EXIT,
@@ -27,15 +27,15 @@ type
 
   TfMenu = class(TForm)
     bAbout: TButton;
-    bOpenfile: TButton;
+    bFiles: TButton;
     bExit: TButton;
-    bSearch: TButton;
+    bSets: TButton;
     bSettings: TButton;
     bBack: TButton;
     procedure FormCreate(Sender: TObject);
-    procedure bOpenfileClick(Sender: TObject);
+    procedure bFilesClick(Sender: TObject);
     procedure bAboutClick(Sender: TObject);
-    procedure bSearchClick(Sender: TObject);
+    procedure bSetsClick(Sender: TObject);
     procedure bSettingsClick(Sender: TObject);
     procedure bBackClick(Sender: TObject);
     procedure bExitClick(Sender: TObject);
@@ -105,9 +105,9 @@ end; // bExitClick
 // O/P       : None
 //
 //***************************************************************************
-procedure TfMenu.bOpenfileClick(Sender: TObject);
+procedure TfMenu.bFilesClick(Sender: TObject);
 begin
-  idOperation := OP_OPEN_FILE;
+  idOperation := OP_FILES;
 end; // bOpenfileClick
 
 //***************************************************************************
@@ -119,9 +119,9 @@ end; // bOpenfileClick
 // O/P       : None
 //
 //***************************************************************************
-procedure TfMenu.bSearchClick(Sender: TObject);
+procedure TfMenu.bSetsClick(Sender: TObject);
 begin
-  idOperation := OP_SEARCH;
+  idOperation := OP_SETS;
 end; // bSearchClick
 
 //***************************************************************************

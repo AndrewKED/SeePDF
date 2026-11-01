@@ -6,10 +6,10 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <ProjectName Condition="'$(ProjectName)'==''">SeePDF</ProjectName>
         <TargetedPlatforms>32787</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>SeePDF.dpr</MainSource>
+        <ProjectName Condition="'$(ProjectName)'==''">SeePDF</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -88,6 +88,7 @@
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
         <SanitizedProjectName>SeePDF</SanitizedProjectName>
+        <DCC_Define>FMX_PROJECT;$(DCC_Define)</DCC_Define>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">
         <DCC_UsePackage>fmx;DbxCommonDriver;bindengine;IndyIPCommon;emsclient;FMX_FlexCel_Components;IndyProtocols;dbxcds;FmxTeeUI;FlexCel_Pdf;FireDACSqliteDriver;DbxClientDriver;soapmidas;dbexpress;inet;FMX_FlexCel_Core;FireDACDBXDriver;CustomIPTransport;IndySystem;ibxbindings;FlexCel_Render;FireDACCommon;emsserverresource;bindcompdbx;rtl;DBXSqliteDriver;DataSnapFireDAC;FireDAC;xmlrtl;ibxpress;dsnap;DataSnapNativeClient;TMSFNCCorePkgDXE15;FMXTMSFNCCorePkgDXE15;emshosting;FireDACCommonDriver;IndyIPClient;emsedge;bindcompfmx;ibmonitor;fmxFireDAC;DataSnapCommon;fmxase;dbrtl;FlexCel_XlsAdapter;FMXTeeGrid;FMXTMSFNCMapsPkgDXE15;DBXInterBaseDriver;FlexCel_Core;bindcomp;inetstn;IndyCore;RESTBackendComponents;RESTComponents;IndyIPServer;dsnapxml;DataSnapClient;DataSnapProviderClient;emsclientfiredac;FireDACDSDriver;tethering;CloudService;FMXTee;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
@@ -192,6 +193,8 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -212,20 +215,41 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Main.Form.pas">
+        <DCCReference Include="Source\Main.Form.pas">
             <Form>fMain</Form>
-            <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="Menu.Form.pas">
+        <DCCReference Include="Source\Menu.Form.pas">
             <Form>fMenu</Form>
-            <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="Pdf.PageTurn.Touch.pas"/>
-        <DCCReference Include="..\..\..\DC12\DX.Pdfium4D\src\DX.Pdf.API.pas"/>
-        <DCCReference Include="..\..\..\DC12\DX.Pdfium4D\src\DX.Pdf.Document.pas"/>
-        <DCCReference Include="..\..\..\DC12\DX.Pdfium4D\src\DX.Pdf.Viewer.Core.pas"/>
-        <DCCReference Include="..\..\..\DC12\DX.Pdfium4D\src\DX.Pdf.Viewer.FMX.pas"/>
-        <DCCReference Include="..\..\..\DC12\DX.Pdfium4D\src\DX.Pdf.Renderer.FMX.pas"/>
+        <DCCReference Include="Source\Pdf.PageTurn.Touch.pas"/>
+        <DCCReference Include="E:\DC12\DX.Pdfium4D\src\DX.Pdf.API.pas"/>
+        <DCCReference Include="E:\DC12\DX.Pdfium4D\src\DX.Pdf.Document.pas"/>
+        <DCCReference Include="E:\DC12\DX.Pdfium4D\src\DX.Pdf.Viewer.Core.pas"/>
+        <DCCReference Include="E:\DC12\DX.Pdfium4D\src\DX.Pdf.Viewer.FMX.pas"/>
+        <DCCReference Include="E:\DC12\DX.Pdfium4D\src\DX.Pdf.Renderer.FMX.pas"/>
+        <DCCReference Include="..\..\DUnits12\Font_Ops.pas"/>
+        <DCCReference Include="Source\ManageSets.Form.pas">
+            <Form>fManageSets</Form>
+        </DCCReference>
+        <DCCReference Include="Source\Configuration.pas"/>
+        <DCCReference Include="..\..\DUnits12\File_Ops.pas"/>
+        <DCCReference Include="Source\Constants.pas"/>
+        <DCCReference Include="Source\Data.pas">
+            <Form>DataModule1</Form>
+            <DesignClass>TDataModule</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Source\ManageFiles.Form.pas">
+            <Form>fManageFiles</Form>
+        </DCCReference>
+        <DCCReference Include="Source\Settings.Form.pas">
+            <Form>fSettings</Form>
+        </DCCReference>
+        <DCCReference Include="..\..\DUnits12\Form_Ops.pas"/>
+        <RcItem Include="Font Awesome 6 Pro-Solid-900.otf">
+            <ContainerId>ResourceItem</ContainerId>
+            <ResourceType>RCDATA</ResourceType>
+            <ResourceId>FA_6_PRO_SOLID</ResourceId>
+        </RcItem>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -246,6 +270,10 @@
                 <Source>
                     <Source Name="MainSource">SeePDF.dpr</Source>
                 </Source>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k290.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp290.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="5">
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
@@ -260,6 +288,12 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="OSX32">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Font Awesome 6 Pro-Solid-900.otf" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

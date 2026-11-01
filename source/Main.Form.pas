@@ -39,7 +39,9 @@ type
     procedure CreatePdfViewer;
     procedure UpdateStatusBar;
     procedure OnPdfViewerPageChanged(Sender: TObject);
-    procedure OpenFile;
+    procedure OpenSettings;
+    procedure ManageFiles;
+    procedure ManageSets;
   protected
     procedure LoadPdfFile(const AFilePath: string);
     procedure ProcessCommandLineParams;
@@ -56,7 +58,9 @@ implementation
 
 uses
   System.IOUtils,
-  Menu.Form;
+  Configuration,
+  Menu.Form, Settings.Form, ManageFiles.Form, ManageSets.Form,
+  Font_Ops, Form_Ops;
 
 {$R *.fmx}
 
@@ -73,6 +77,11 @@ uses
 procedure TfMain.FormCreate(Sender: TObject);
 begin
   Caption := 'KED PDF Viewer';
+
+  LoadResourceFont('FA_6_PRO_SOLID');
+
+  LoadFormSizePosition(self, progConfig, 'Main\Form');
+
   FCurrentPdfPath := '';
 
   CreatePdfViewer;
@@ -91,6 +100,8 @@ end; // FormCreate
 //***************************************************************************
 procedure TfMain.FormDestroy(Sender: TObject);
 begin
+  SaveFormSizePosition(self, progConfig, 'Main\Form');
+
   FreeAndNil(FPageTurn);
   FreeAndNil(FPdfViewer);
 end; // FormDestroy
@@ -104,25 +115,79 @@ end; // FormDestroy
 // O/P       : None
 //
 //***************************************************************************
-procedure TfMain.OpenFile;
-begin
-  OpenDialog.Title := 'Open PDF File';
-  OpenDialog.Filter := 'PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*';
-  OpenDialog.DefaultExt := 'pdf';
-  OpenDialog.Options := [TOpenOption.ofFileMustExist, TOpenOption.ofEnableSizing];
+procedure TfMain.ManageFiles;
+var
+  fManageFiles : TfManageFiles;
 
-  if OpenDialog.Execute then
+begin
+  fManageFiles := TfManageFiles.Create(Self);
+  try
+    fManageFiles.ShowModal;
+  finally
+    FreeAndNil(fManageFiles);
+  end; // try
+
+//  OpenDialog.Title := 'Open PDF File';
+//  OpenDialog.Filter := 'PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*';
+//  OpenDialog.DefaultExt := 'pdf';
+//  OpenDialog.Options := [TOpenOption.ofFileMustExist, TOpenOption.ofEnableSizing];
+//
+//  if OpenDialog.Execute then
+//  begin
+//    if TPath.GetExtension(OpenDialog.FileName).ToLower = '.pdf' then
+//    begin
+//      LoadPdfFile(OpenDialog.FileName);
+//    end // if
+//    else
+//    begin
+//      ShowMessage('Please select a PDF file.');
+//    end; // else
+//  end; // if
+end; // ManageFiles
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.ManageSets;
+begin
+  if (not Assigned(fSettings)) then
   begin
-    if TPath.GetExtension(OpenDialog.FileName).ToLower = '.pdf' then
-    begin
-      LoadPdfFile(OpenDialog.FileName);
-    end // if
-    else
-    begin
-      ShowMessage('Please select a PDF file.');
-    end; // else
+    fSettings := TfSettings.Create(Self);
   end; // if
-end; // OpenFile
+  try
+    fSettings.ShowModal;
+  finally
+    FreeAndNil(fSettings);
+  end; // try
+end; // ManageSets
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.OpenSettings;
+begin
+  if (not Assigned(fSettings)) then
+  begin
+    fSettings := TfSettings.Create(Self);
+  end; // if
+  try
+    fSettings.ShowModal;
+  finally
+    FreeAndNil(fSettings);
+  end; // try
+end;
 
 //***************************************************************************
 //
@@ -138,24 +203,24 @@ begin
   if (not Assigned(fMenu)) then
   begin
     fMenu := TfMenu.Create(Self);
-    try
-      fMenu.ShowModal;
-      case fMenu.idOperation of
-        OP_OPEN_FILE :
-          OpenFile;
-        OP_SEARCH :
-          ; //
-        OP_SETTINGS :
-          ; //
-        OP_EXIT :
-          Close;
-        OP_ABOUT :
-          ; //
-      end; // case
-    finally
-      FreeAndNil(fMenu);
-    end; // try
   end; // if
+  try
+    fMenu.ShowModal;
+    case fMenu.idOperation of
+      OP_FILES :
+        ManageFiles;
+      OP_SETS :
+        ManageSets;
+      OP_SETTINGS :
+        OpenSettings;
+      OP_EXIT :
+        Close;
+      OP_ABOUT :
+        ; //
+    end; // case
+  finally
+    FreeAndNil(fMenu);
+  end; // try
 end; // bMenuClick
 
 //***************************************************************************
