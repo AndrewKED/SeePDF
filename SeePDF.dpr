@@ -21,7 +21,10 @@ uses
   Data in 'Source\Data.pas' {DataModule1: TDataModule},
   ManageFiles.Form in 'Source\ManageFiles.Form.pas' {fManageFiles},
   Settings.Form in 'Source\Settings.Form.pas' {fSettings},
-  Form_Ops in '..\..\DUnits12\Form_Ops.pas';
+  Form_Ops in '..\..\DUnits12\Form_Ops.pas',
+  Hash_Ops in '..\..\DUnits12\Hash_Ops.pas',
+  FMX.Grid_Ops in '..\..\DUnits12\FMX.Grid_Ops.pas',
+  Str_Ops in '..\..\DUnits12\Str_Ops.pas';
 
 {$R *.res}
 
@@ -29,7 +32,5 @@ begin
   Application.Initialize;
   Application.CreateForm(TfMain, fMain);
   Application.CreateForm(TDataModule1, DataModule1);
-  Application.CreateForm(TfManageFiles, fManageFiles);
-  Application.CreateForm(TfSettings, fSettings);
   Application.Run;
 end.

@@ -80,3 +80,9 @@ __recovery/
 
 # Sundry
 *.code-workspace
+*.otf
+
+# Assistance files
+Installationfiles/
+Installations/
+Versions/

@@ -124,6 +124,7 @@ object fSettings: TfSettings
     end
   end
   object OpenDialog: TOpenDialog
+    Filter = 'PDF files (*.pdf)|*.pdf'
     Left = 335
     Top = 30
   end

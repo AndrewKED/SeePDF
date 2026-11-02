@@ -12,12 +12,17 @@ object fManageFiles: TfManageFiles
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnResize = FormResize
   DesignerMasterStyle = 0
   object OpenDialog: TOpenDialog
+    DefaultExt = 'pdf'
+    Filter = 'PDF files (*.pdf)|*.pdf'
+    Title = 'Select PDF file'
     Left = 335
     Top = 30
   end
-  object StringGrid1: TStringGrid
+  object sgFiles: TStringGrid
     Align = Client
     CanFocus = True
     ClipChildren = True
@@ -25,18 +30,22 @@ object fManageFiles: TfManageFiles
     Size.Height = 235.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
+    Options = [ColLines, RowLines, RowSelect, AlwaysShowSelection, Tabs, Header, HeaderClick, AutoDisplacement]
+    OnHeaderClick = sgFilesHeaderClick
+    OnSelChanged = sgFilesSelChanged
+    OnCellClick = sgFilesCellClick
+    OnCellDblClick = sgFilesCellDblClick
     Viewport.Width = 1034.000000000000000000
     Viewport.Height = 210.000000000000000000
-    object StringColumn1: TStringColumn
+    object scTitle: TStringColumn
       HorzAlign = Center
-      Header = 'Name'
+      Header = 'Name (ascending alphabetically)'
       HeaderSettings.StyledSettings = [Family, Size, FontColor]
       HeaderSettings.TextSettings.Font.StyleExt = {00070000000000000004000000}
       HeaderSettings.TextSettings.WordWrap = False
       HeaderSettings.TextSettings.HorzAlign = Center
     end
-    object StringColumn2: TStringColumn
-      OnGesture = StringColumn2Gesture
+    object scAudio: TStringColumn
       HorzAlign = Center
       Header = 'Audio available'
       HeaderSettings.StyledSettings = [Family, Size, FontColor]
@@ -81,6 +90,7 @@ object fManageFiles: TfManageFiles
       end
       object bEdit: TButton
         Align = Left
+        Enabled = False
         StyledSettings = [Style, FontColor]
         Hint = 'Edit'
         Margins.Left = 10.000000000000000000
@@ -160,8 +170,9 @@ object fManageFiles: TfManageFiles
         ParentShowHint = False
         ShowHint = True
       end
-      object Button1: TButton
+      object bClose: TButton
         Align = Right
+        Cancel = True
         StyledSettings = [Style, FontColor]
         Hint = 'Close'
         Margins.Top = 10.000000000000000000
@@ -179,7 +190,7 @@ object fManageFiles: TfManageFiles
         TextSettings.Trimming = None
         ParentShowHint = False
         ShowHint = True
-        OnClick = Button1Click
+        OnClick = bCloseClick
       end
     end
     object pEdit: TPanel
@@ -193,7 +204,7 @@ object fManageFiles: TfManageFiles
       object bAccept: TButton
         Align = Right
         StyledSettings = [Style, FontColor]
-        Hint = 'Cancel'
+        Hint = 'Accept'
         Margins.Top = 10.000000000000000000
         Margins.Right = 10.000000000000000000
         Margins.Bottom = 10.000000000000000000
@@ -214,7 +225,7 @@ object fManageFiles: TfManageFiles
       object bCancel: TButton
         Align = Right
         StyledSettings = [Style, FontColor]
-        Hint = 'Cancel'
+        Hint = 'Accept'
         Margins.Top = 10.000000000000000000
         Margins.Right = 10.000000000000000000
         Margins.Bottom = 10.000000000000000000
@@ -249,18 +260,20 @@ object fManageFiles: TfManageFiles
     TabOrder = 3
     object eName: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 38
+      TabOrder = 2
+      ReadOnly = True
       Position.X = 140.000000000000000000
-      Position.Y = 20.000000000000000000
+      Position.Y = 50.000000000000000000
       Size.Width = 356.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
     end
     object eAlternateNames: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 39
+      TabOrder = 3
+      ReadOnly = True
       Position.X = 140.000000000000000000
-      Position.Y = 50.000000000000000000
+      Position.Y = 80.000000000000000000
       Size.Width = 356.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -268,51 +281,54 @@ object fManageFiles: TfManageFiles
     object memNotes: TMemo
       Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
       DataDetectorTypes = []
+      ReadOnly = True
       Anchors = [akLeft, akTop, akRight]
       Position.X = 520.000000000000000000
       Position.Y = 45.000000000000000000
       Size.Width = 500.000000000000000000
       Size.Height = 51.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 40
+      TabOrder = 4
       Viewport.Width = 496.000000000000000000
       Viewport.Height = 47.000000000000000000
     end
     object Name: TLabel
       Position.X = 20.000000000000000000
-      Position.Y = 23.000000000000000000
+      Position.Y = 53.000000000000000000
       Size.Width = 66.000000000000000000
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Name'
-      TabOrder = 45
+      TabOrder = 9
     end
     object Label1: TLabel
       Position.X = 20.000000000000000000
-      Position.Y = 53.000000000000000000
+      Position.Y = 83.000000000000000000
       Size.Width = 111.000000000000000000
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Alternative name/s'
-      TabOrder = 43
+      TabOrder = 7
     end
     object Label2: TLabel
       Position.X = 20.000000000000000000
-      Position.Y = 83.000000000000000000
-      Size.Width = 66.000000000000000000
+      Position.Y = 23.000000000000000000
+      Size.Width = 96.000000000000000000
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
-      Text = 'Location'
-      TabOrder = 42
+      Text = 'File name'
+      TabOrder = 6
     end
-    object Label3: TLabel
+    object lRelativeFileName: TLabel
+      AutoSize = True
       Position.X = 140.000000000000000000
-      Position.Y = 83.000000000000000000
-      Size.Width = 66.000000000000000000
-      Size.Height = 17.000000000000000000
+      Position.Y = 23.000000000000000000
+      Size.Width = 8.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
-      Text = 'Location'
-      TabOrder = 41
+      TextSettings.WordWrap = False
+      Text = '...'
+      TabOrder = 1
     end
     object Label4: TLabel
       Position.X = 520.000000000000000000
@@ -321,7 +337,18 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Notes'
-      TabOrder = 44
+      TabOrder = 8
+    end
+    object bOpenFile: TButton
+      Position.X = 100.000000000000000000
+      Position.Y = 20.000000000000000000
+      Size.Width = 31.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = '...'
+      TextSettings.Trimming = None
+      OnClick = bOpenFileClick
     end
   end
 end

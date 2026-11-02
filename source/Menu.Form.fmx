@@ -101,7 +101,7 @@ object fMenu: TfMenu
   object bBack: TButton
     Cancel = True
     StyledSettings = [Style, FontColor]
-    ModalResult = 1
+    ModalResult = 2
     Position.X = 10.000000000000000000
     Position.Y = 190.000000000000000000
     Size.Width = 80.000000000000000000

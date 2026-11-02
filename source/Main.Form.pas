@@ -122,7 +122,9 @@ var
 begin
   fManageFiles := TfManageFiles.Create(Self);
   try
-    fManageFiles.ShowModal;
+    if ((fManageFiles.ShowModal = mrOk) and
+        (fManageFiles.SelectedFilePath <> '')) then
+      LoadPdfFile(fManageFiles.SelectedFilePath);
   finally
     FreeAndNil(fManageFiles);
   end; // try
