@@ -77,6 +77,9 @@ end; // Connect
 procedure TDataModule1.CreateTables;
 begin
   // Pieces / scores / PDFs
+
+  // add speed (pbm) as TEXT
+
   connection.ExecSQL(
     'CREATE TABLE IF NOT EXISTS scores (' +
     'id INTEGER PRIMARY KEY AUTOINCREMENT,' +
@@ -85,7 +88,7 @@ begin
     'fileHash TEXT NOT NULL CHECK (length(trim(fileHash)) > 0),' +
     'timeSignature TEXT,' +
     'path TEXT NOT NULL CHECK (length(trim(path)) > 0),' +
-    'genre TEXT,' +
+    'genre INTEGER CHECK (genre IS NULL OR genre >= 0),' +
     'composer TEXT,' +
     'pageCount INTEGER CHECK (pageCount IS NULL OR pageCount >= 0),' +
     'notes TEXT,' +

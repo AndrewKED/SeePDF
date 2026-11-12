@@ -56,4 +56,17 @@ object fMain: TfMain
     Left = 145
     Top = 85
   end
+  object timEvents: TTimer
+    Left = 465
+    Top = 155
+  end
+  object cpDrv: TCommPortDriver
+    Port = pnCustom
+    PortName = '\\.\COM5'
+    BaudRate = brCustom
+    BaudRateValue = 115200
+    OnReceiveData = cpDrvReceiveData
+    Left = 290
+    Top = 100
+  end
 end

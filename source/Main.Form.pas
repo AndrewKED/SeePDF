@@ -21,7 +21,8 @@ uses
   FMX.StdCtrls,
   DX.Pdf.Viewer.FMX,
   DX.Pdf.Document,
-  Pdf.PageTurn.Touch;
+  Pdf.PageTurn.Touch, CPDrv,
+  Footswitch.Serial;
 
 type
   TfMain = class(TForm)
@@ -29,19 +30,28 @@ type
     StatusLabel: TLabel;
     bMenu: TButton;
     OpenDialog: TOpenDialog;
+    cpDrv: TCommPortDriver;
+    timEvents: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure bMenuClick(Sender: TObject);
+    procedure cpDrvReceiveData(Sender: TObject; DataPtr: Pointer;
+      DataSize: DWORD);
   private
     FPdfViewer: TPdfViewer;
     FCurrentPdfPath: string;
     FPageTurn: TPdfPageTurnTouch;
+    FFoot: TFootswitchSerial;
     procedure CreatePdfViewer;
     procedure UpdateStatusBar;
     procedure OnPdfViewerPageChanged(Sender: TObject);
     procedure OpenSettings;
+    procedure AboutInfo;
     procedure ManageFiles;
     procedure ManageSets;
+    procedure FootPedal(Sender: TObject; Pedal: TFootswitchPedal);
+    procedure FootStatusChanged(Sender: TObject);
+    function FootswitchStatusText: string;
   protected
     procedure LoadPdfFile(const AFilePath: string);
     procedure ProcessCommandLineParams;
@@ -59,7 +69,7 @@ implementation
 uses
   System.IOUtils,
   Configuration,
-  Menu.Form, Settings.Form, ManageFiles.Form, ManageSets.Form,
+  Menu.Form, Settings.Form, ManageFiles.Form, ManageSets.Form,About.Form,
   Font_Ops, Form_Ops;
 
 {$R *.fmx}
@@ -78,7 +88,7 @@ procedure TfMain.FormCreate(Sender: TObject);
 begin
   Caption := 'KED PDF Viewer';
 
-  LoadResourceFont('FA_6_PRO_SOLID');
+//  LoadResourceFont('FA_6_PRO_SOLID');
 
   LoadFormSizePosition(self, progConfig, 'Main\Form');
 
@@ -87,6 +97,11 @@ begin
   CreatePdfViewer;
   UpdateStatusBar;
   ProcessCommandLineParams;
+
+  FFoot := TFootswitchSerial.Create(cpDrv, timEvents);
+  FFoot.OnPedal := FootPedal;
+  FFoot.OnStatusChanged := FootStatusChanged;
+  FFoot.Start;
 end; // FormCreate
 
 //***************************************************************************
@@ -103,6 +118,7 @@ begin
   SaveFormSizePosition(self, progConfig, 'Main\Form');
 
   FreeAndNil(FPageTurn);
+  FreeAndNil(FFoot);
   FreeAndNil(FPdfViewer);
 end; // FormDestroy
 
@@ -193,6 +209,28 @@ end;
 
 //***************************************************************************
 //
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.AboutInfo;
+begin
+  if (not Assigned(fAbout)) then
+  begin
+    fAbout := TfAbout.Create(Self);
+  end; // if
+  try
+    fAbout.ShowModal;
+  finally
+    FreeAndNil(fAbout);
+  end; // try
+end;
+
+//***************************************************************************
+//
 // OPERATION : Show the operation menu and run the chosen command.
 //
 // I/P       : Sender : TObject - The menu button.
@@ -218,12 +256,30 @@ begin
       OP_EXIT :
         Close;
       OP_ABOUT :
-        ; //
+        AboutInfo;
     end; // case
   finally
     FreeAndNil(fMenu);
   end; // try
 end; // bMenuClick
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.cpDrvReceiveData(Sender: TObject; DataPtr: Pointer;
+  DataSize: DWORD);
+begin
+  if Assigned(FFoot) then
+  begin
+    FFoot.FeedData(DataPtr, DataSize);
+  end; // if
+end; // cpDrvReceiveData
 
 //***************************************************************************
 //
@@ -311,46 +367,6 @@ end; // LoadPdfFile
 
 //***************************************************************************
 //
-// OPERATION : Rebuild the status line from the open document.
-//
-// I/P       : None
-//
-// O/P       : None
-//
-//***************************************************************************
-procedure TfMain.UpdateStatusBar;
-var
-  LFileName: string;
-  LPdfVersion: string;
-  LPdfAInfo: string;
-  LStatusText: string;
-
-begin
-  if ((FCurrentPdfPath = '') or
-      (FPdfViewer.Document = nil) or
-      (not FPdfViewer.Document.IsLoaded)) then
-  begin
-    StatusLabel.Text := 'No document loaded';
-    Exit;
-  end; // if
-
-  LFileName := TPath.GetFileName(FCurrentPdfPath);
-  LPdfVersion := FPdfViewer.Document.GetFileVersionString;
-  LPdfAInfo := FPdfViewer.Document.GetPdfAInfo;
-
-  LStatusText := Format('File: %s  |  PDF Version: %s', [LFileName, LPdfVersion]);
-
-  if LPdfAInfo <> '' then
-    LStatusText := LStatusText + '  |  ' + LPdfAInfo;
-
-  LStatusText := LStatusText + Format('  |  Page %d/%d',
-    [FPdfViewer.CurrentPageIndex + 1, FPdfViewer.PageCount]);
-
-  StatusLabel.Text := LStatusText;
-end; // UpdateStatusBar
-
-//***************************************************************************
-//
 // OPERATION : Refresh the status line after the visible page changes.
 //
 // I/P       : Sender : TObject - The viewer that changed page.
@@ -418,4 +434,112 @@ begin
   end; // if
 end; // DragDrop
 
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.FootPedal(Sender: TObject; Pedal: TFootswitchPedal);
+begin
+  if (FPdfViewer = nil) or (FPdfViewer.Document = nil) or
+     (not FPdfViewer.Document.IsLoaded) then
+  begin
+    Exit;
+  end; // if
+
+  case Pedal of
+    fpPrevShort:
+      FPdfViewer.PreviousPage;
+    fpNextShort:
+      FPdfViewer.NextPage;
+    fpPrevLong:
+      FPdfViewer.FirstPage;
+    fpNextLong:
+      FPdfViewer.LastPage;
+  end; // case
+end; // FootPedal
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.FootStatusChanged(Sender: TObject);
+begin
+  UpdateStatusBar;
+end; // FootStatusChanged
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+function TfMain.FootswitchStatusText: string;
+begin
+  if (FFoot <> nil) and FFoot.Linked then
+  begin
+    Result := Format('Footswitch: %s  fw %s',
+      [FFoot.ActivePort, FFoot.FirmwareVersion])
+  end // if
+  else
+  begin
+    Result := 'Footswitch: searching…';
+  end; // else
+end; // FootswitchStatusText
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfMain.UpdateStatusBar;
+var
+  LFileName: string;
+  LPdfVersion: string;
+  LPdfAInfo: string;
+  LStatusText: string;
+
+begin
+  if ((FCurrentPdfPath = '') or
+      (FPdfViewer.Document = nil) or
+      (not FPdfViewer.Document.IsLoaded)) then
+  begin
+    StatusLabel.Text := FootswitchStatusText;
+    Exit;
+  end; // if
+
+  LFileName := TPath.GetFileName(FCurrentPdfPath);
+  LPdfVersion := FPdfViewer.Document.GetFileVersionString;
+  LPdfAInfo := FPdfViewer.Document.GetPdfAInfo;
+
+  LStatusText := Format('File: %s  |  PDF Version: %s',
+    [LFileName, LPdfVersion]);
+
+  if LPdfAInfo <> '' then
+  begin
+    LStatusText := LStatusText + '  |  ' + LPdfAInfo;
+  end; // if
+
+  LStatusText := LStatusText + Format('  |  Page %d/%d  |  %s',
+    [FPdfViewer.CurrentPageIndex + 1, FPdfViewer.PageCount,
+     FootswitchStatusText]);
+
+  StatusLabel.Text := LStatusText;
+end; // UpdateStatusBar
 end. // Main.Form

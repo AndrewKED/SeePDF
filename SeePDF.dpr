@@ -4,6 +4,8 @@ program SeePDF;
 
 uses
   System.StartUpCopy,
+  System.Classes,
+  Winapi.Windows,
   FMX.Forms,
   Main.Form in 'Source\Main.Form.pas' {fMain},
   Menu.Form in 'Source\Menu.Form.pas' {fMenu},
@@ -24,11 +26,25 @@ uses
   Form_Ops in '..\..\DUnits12\Form_Ops.pas',
   Hash_Ops in '..\..\DUnits12\Hash_Ops.pas',
   FMX.Grid_Ops in '..\..\DUnits12\FMX.Grid_Ops.pas',
-  Str_Ops in '..\..\DUnits12\Str_Ops.pas';
+  Str_Ops in '..\..\DUnits12\Str_Ops.pas',
+  About.Form in 'source\About.Form.pas' {fAbout},
+  App_Ops in '..\..\DUnits12\App_Ops.pas',
+  Footswitch.Serial in 'source\Footswitch.Serial.pas';
 
 {$R *.res}
+var
+  fontStream : TResourceStream;
 
 begin
+//  GlobalUseSkia := TRUE;
+//
+//  fontStream := TResourceStream.Create(HInstance, 'FA_6_PRO_SOLID', RT_RCDATA);
+//  try
+//    TSkDefaultProviders.RegisterTypeface(fontStream);
+//  finally
+//    fontStream.Free;
+//  end; // try
+
   Application.Initialize;
   Application.CreateForm(TfMain, fMain);
   Application.CreateForm(TDataModule1, DataModule1);

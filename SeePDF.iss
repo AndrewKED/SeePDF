@@ -1,5 +1,5 @@
 #define MyAppName "SeePDF"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define Year GetDateTimeString('yyyy', '', '');
 #define MyAppPublisher "KED Software"
 
@@ -30,6 +30,7 @@ Uninstallable=True
 [Files]
 Source: "SeePDF.exe"; DestDir: "{app}"
 Source: "pdfium.dll"; DestDir: "{app}"
+;Source: "sk4d.dll"; DestDir: "{app}"
 
 [Run]
 Filename: "{app}\SeePDF.exe"; Description: "Launch application"; Flags: postinstall nowait

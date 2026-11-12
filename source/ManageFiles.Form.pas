@@ -1,4 +1,4 @@
-unit ManageFiles.Form;
+﻿unit ManageFiles.Form;
 
 interface
 
@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls,
   FMX.Edit, FMX.Controls.Presentation, FMX.Layouts, System.Rtti, FMX.Grid.Style,
-  FMX.Grid, FMX.ScrollBox, FMX.Memo.Types, FMX.Memo;
+  FMX.Grid, FMX.ScrollBox, FMX.Memo.Types, FMX.Memo, FMX.ListBox;
 
 type
   TfManageFiles = class(TForm)
@@ -35,6 +35,14 @@ type
     bCancel: TButton;
     bClose: TButton;
     bOpenFile: TButton;
+    bView: TButton;
+    Label5: TLabel;
+    eTimeSignature: TEdit;
+    scTimeSignature: TStringColumn;
+    Label3: TLabel;
+    cbGenre: TComboBox;
+    Label6: TLabel;
+    eComposer: TEdit;
     procedure bAddClick(Sender: TObject);
     procedure bEditClick(Sender: TObject);
     procedure bAcceptClick(Sender: TObject);
@@ -48,15 +56,20 @@ type
     procedure FormResize(Sender: TObject);
     procedure sgFilesHeaderClick(Column: TColumn);
     procedure sgFilesCellDblClick(const Column: TColumn; const Row: Integer);
+    procedure bViewClick(Sender: TObject);
+    procedure cbGenrePopup(Sender: TObject);
   private
     { Private declarations }
     type
-        TScoreDetail = record
-          Id : Int64;
-          AlternateTitle : String;
-          Path : String;
-          Notes : String;
-        end;
+      TScoreDetail = record
+        Id : Int64;
+        AlternateTitle : String;
+        Path : String;
+        Notes : String;
+        TimeSignature : String;
+        Genre : Integer;
+        Composer : String;
+      end;
     var
       scoreDetails : TArray<TScoreDetail>;
       editingScore : Boolean;
@@ -64,6 +77,7 @@ type
       sortFwd : Boolean;
       savedId : Int64;
       FselectedFilePath : String;
+    procedure SelectGenre(const genreId : Integer);
     procedure SetEditing(const editing : Boolean);
     procedure RepairScorePaths;
     procedure LoadScores(const selectId : Int64);
@@ -89,10 +103,35 @@ uses
   WinApi.Windows,
   Vcl.Dialogs,
 {$ENDIF}
-  Configuration, Data,
+  Constants, Configuration, Data,
   Hash_Ops, FMX.Grid_Ops, Str_Ops;
 
 {$R *.fmx}
+
+//***************************************************************************
+//
+// OPERATION : Select the genre combo item that matches the stored value.
+//
+// I/P : genre : Integer - Genre id
+//
+// O/P : None
+//
+//***************************************************************************
+procedure TfManageFiles.SelectGenre(const genreId : Integer);
+var
+  i : Integer;
+
+begin
+  cbGenre.ItemIndex := 0;
+  for i := 0 to cbGenre.Items.Count - 1 do
+  begin
+    if NativeInt(cbGenre.Items.Objects[i]) = genreId then
+    begin
+      cbGenre.ItemIndex := i;
+      Exit;
+    end; // if
+  end; // for
+end; // SelectGenre
 
 //***************************************************************************
 //
@@ -119,6 +158,9 @@ begin
   begin
     eName.Text := '';
     eAlternateNames.Text := '';
+    eTimeSignature.Text := '';
+    eComposer.Text := '';
+    cbGenre.ItemIndex := 0;
     lRelativeFileName.Text := '';
     memNotes.Text := '';
     Exit;
@@ -126,7 +168,10 @@ begin
 
   eName.Text := sgFiles.Cells[0, row];
   eAlternateNames.Text := scoreDetails[row].AlternateTitle;
+  eTimeSignature.Text := scoreDetails[row].TimeSignature;
+  eComposer.Text := scoreDetails[row].Composer;
   memNotes.Text := scoreDetails[row].Notes;
+  SelectGenre(scoreDetails[row].Genre);
 
   storedPath := scoreDetails[row].Path;
   if storedPath = '' then
@@ -197,7 +242,11 @@ begin
 
   eName.ReadOnly := not editing;
   eAlternateNames.ReadOnly := not editing;
+  eTimeSignature.ReadOnly := not editing;
+  eComposer.ReadOnly := not editing;
   memNotes.ReadOnly := not editing;
+  cbGenre.HitTest := editing;
+  cbGenre.CanFocus := editing;
   bOpenFile.Visible := editing;
 
   sgFiles.Enabled := not editing;
@@ -344,11 +393,12 @@ begin
     DataModule1.query.Close;
     DataModule1.query.SQL.Text :=
       'SELECT id, title, path, alternateTitle, notes, ' +
+      'timeSignature, genre, composer, ' +
       'CASE WHEN EXISTS (' +
       '  SELECT 1 FROM linking WHERE linking.idScore = scores.id' +
       ') THEN ''Yes'' ELSE ''No'' END AS audioAvailable ' +
       'FROM scores ' +
-      ifthens(sortFwd,
+      IfThenS(sortFwd,
         'ORDER BY title COLLATE NOCASE',
         'ORDER BY title COLLATE NOCASE DESC'
       );
@@ -362,6 +412,8 @@ begin
       sgFiles.Cells[0, row] :=
         DataModule1.query.FieldByName('title').AsString;
       sgFiles.Cells[1, row] :=
+        DataModule1.query.FieldByName('timeSignature').AsString;
+      sgFiles.Cells[2, row] :=
         DataModule1.query.FieldByName('audioAvailable').AsString;
       scoreDetails[row].Id :=
         DataModule1.query.FieldByName('id').AsLargeInt;
@@ -371,6 +423,12 @@ begin
         DataModule1.query.FieldByName('path').AsString;
       scoreDetails[row].Notes :=
         DataModule1.query.FieldByName('notes').AsString;
+      scoreDetails[row].TimeSignature :=
+        DataModule1.query.FieldByName('timeSignature').AsString;
+      scoreDetails[row].Genre :=
+        DataModule1.query.FieldByName('genre').AsInteger;
+        scoreDetails[row].Composer :=
+        DataModule1.query.FieldByName('composer').AsString;
       if scoreDetails[row].Id = selectId then
         selectRow := row;
       Inc(row);
@@ -424,8 +482,12 @@ procedure TfManageFiles.bAddClick(Sender: TObject);
 begin
   addingScore := True;
   SetEditing(TRUE);
+
   eName.Text := '';
   eAlternateNames.Text := '';
+  eTimeSignature.Text := '';
+  eComposer.Text := '';
+  cbGenre.ItemIndex := 0;
   lRelativeFileName.Text := '';
   memNotes.Text := '';
 
@@ -532,6 +594,35 @@ end; // bOpenFileClick
 //  O/P       :
 //
 //***************************************************************************
+procedure TfManageFiles.bViewClick(Sender: TObject);
+begin
+  sgFilesCellDblClick(sgFiles.Columns[0], sgFiles.Row);
+end;
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
+procedure TfManageFiles.cbGenrePopup(Sender: TObject);
+begin
+ if not editingScore then
+    cbGenre.DropDown; // already open → toggle closed
+end;
+
+//***************************************************************************
+//
+//  OPERATION :
+//
+//  I/P       :
+//
+//  O/P       :
+//
+//***************************************************************************
 procedure TfManageFiles.bCloseClick(Sender: TObject);
 begin
   Close;
@@ -592,7 +683,7 @@ end; // VerticalScrollBarWidth
 //***************************************************************************
 procedure TfManageFiles.LayoutFileColumns;
 begin
-  ResizeGridColumns(sgFiles, [9, 1]);
+  ResizeGridColumns(sgFiles, [7, 2, 1]);
 end; // LayoutFileColumns
 
 //***************************************************************************
@@ -634,10 +725,19 @@ end;
 //
 //***************************************************************************
 procedure TfManageFiles.FormCreate(Sender: TObject);
+var
+  n : Integer;
+
 begin
   FselectedFilePath := '';
   addingScore := False;
   SetEditing(FALSE);
+
+  cbGenre.Items.Clear;
+  for n := Low(TUNE_TYPES) to High(TUNE_TYPES) do
+  begin
+    cbGenre.Items.AddObject(TUNE_TYPES[n].name, TObject(TUNE_TYPES[n].id));
+  end; // for
 
   sortFwd := True;
   LoadScores(-1);
@@ -741,6 +841,7 @@ var
   fullFile : String;
   scoreHash : String;
   existingTitle : String;
+  scoreGenre : Integer;
 
 begin
   scoreName := Trim(eName.Text);
@@ -772,6 +873,11 @@ begin
     Exit;
   end; // try
 
+  if cbGenre.ItemIndex >= 0 then
+    scoreGenre := NativeInt(cbGenre.Items.Objects[cbGenre.ItemIndex])
+  else
+    scoreGenre := Ord(TYPE_OTHER);
+
   if addingScore then
   begin
     if ScoreAlreadyListed(scoreHash, scorePath, existingTitle) then
@@ -791,17 +897,21 @@ begin
   begin
     DataModule1.query.Close;
     DataModule1.query.SQL.Text :=
-      'INSERT INTO scores (title, path, fileHash, alternateTitle, notes) ' +
-      'VALUES (:title, :path, :fileHash, :alternateTitle, :notes)';
+      'INSERT INTO scores (title, path, fileHash, alternateTitle, ' +
+      'timeSignature, genre, composer, notes) ' +
+      'VALUES (:title, :path, :fileHash, :alternateTitle, ' +
+      ':timeSignature, :genre, :composer, :notes)';
     DataModule1.query.ParamByName('title').AsString := scoreName;
     DataModule1.query.ParamByName('path').AsString := scorePath;
     DataModule1.query.ParamByName('fileHash').AsString := scoreHash;
     DataModule1.query.ParamByName('alternateTitle').AsString :=
       Trim(eAlternateNames.Text);
+    DataModule1.query.ParamByName('timeSignature').AsString :=
+      Trim(eTimeSignature.Text);
+    DataModule1.query.ParamByName('genre').AsInteger := scoreGenre;
+    DataModule1.query.ParamByName('composer').AsString :=
+      Trim(eComposer.Text);
     DataModule1.query.ParamByName('notes').AsString := memNotes.Text;
-    DataModule1.query.ExecSQL;
-    savedId := DataModule1.connection.ExecSQLScalar(
-      'SELECT last_insert_rowid()');
   end // if
   else
   begin
@@ -813,13 +923,19 @@ begin
     DataModule1.query.SQL.Text :=
       'UPDATE scores ' +
       'SET title = :title, path = :path, fileHash = :fileHash, ' +
-      'alternateTitle = :alternateTitle, notes = :notes ' +
+      'alternateTitle = :alternateTitle, timeSignature = :timeSignature, ' +
+      'genre = :genre, composer = :composer, notes = :notes ' +
       'WHERE id = :id';
     DataModule1.query.ParamByName('title').AsString := scoreName;
     DataModule1.query.ParamByName('path').AsString := scorePath;
     DataModule1.query.ParamByName('fileHash').AsString := scoreHash;
     DataModule1.query.ParamByName('alternateTitle').AsString :=
       Trim(eAlternateNames.Text);
+    DataModule1.query.ParamByName('timeSignature').AsString :=
+      Trim(eTimeSignature.Text);
+    DataModule1.query.ParamByName('genre').AsInteger := scoreGenre;
+    DataModule1.query.ParamByName('composer').AsString :=
+      Trim(eComposer.Text);
     DataModule1.query.ParamByName('notes').AsString := memNotes.Text;
     DataModule1.query.ParamByName('id').AsLargeInt := savedId;
     DataModule1.query.ExecSQL;
