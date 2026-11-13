@@ -17,7 +17,8 @@ uses
 type
   TOperations = (
     OP_NONE,
-    OP_FILES,
+    OP_PDFS,
+    OP_AUDIO,
     OP_SETS,
     OP_SETTINGS,
     OP_BACK,
@@ -27,18 +28,20 @@ type
 
   TfMenu = class(TForm)
     bAbout: TButton;
-    bFiles: TButton;
+    bPDFs: TButton;
     bExit: TButton;
     bSets: TButton;
     bSettings: TButton;
     bBack: TButton;
+    bAudio: TButton;
     procedure FormCreate(Sender: TObject);
-    procedure bFilesClick(Sender: TObject);
+    procedure bPDFsClick(Sender: TObject);
     procedure bAboutClick(Sender: TObject);
     procedure bSetsClick(Sender: TObject);
     procedure bSettingsClick(Sender: TObject);
     procedure bBackClick(Sender: TObject);
     procedure bExitClick(Sender: TObject);
+    procedure bAudioClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -84,6 +87,20 @@ end; // bBackClick
 
 //***************************************************************************
 //
+// OPERATION : Record that a PDF should be opened.
+//
+// I/P       : Sender : TObject - The Open button.
+//
+// O/P       : None
+//
+//***************************************************************************
+procedure TfMenu.bAudioClick(Sender: TObject);
+begin
+  idOperation := OP_AUDIO;
+end; // bOpenfileClick
+
+//***************************************************************************
+//
 // OPERATION : Record that the application should close.
 //
 // I/P       : Sender : TObject - The Exit button.
@@ -105,9 +122,9 @@ end; // bExitClick
 // O/P       : None
 //
 //***************************************************************************
-procedure TfMenu.bFilesClick(Sender: TObject);
+procedure TfMenu.bPDFsClick(Sender: TObject);
 begin
-  idOperation := OP_FILES;
+  idOperation := OP_PDFS;
 end; // bOpenfileClick
 
 //***************************************************************************

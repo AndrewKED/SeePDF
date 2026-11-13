@@ -11,7 +11,7 @@ SET UNITS=DUnits12
 "c:\Program Files\7-Zip\7z" a %~dp0"Versions\%ZIP_FILE_PREFIX%_%1" *.dll -tzip
 
 REM Assuming that the source code is in X:\Delphi_???\<Project Name>\
-cd ..
+cd ..\..
 @ECHO **** Zipping Delphi units source files ****
 "c:\Program Files\7-Zip\7z" a %~dp0"Versions\%ZIP_FILE_PREFIX%_%1" "%UNITS%\*.pas" -tzip
 "c:\Program Files\7-Zip\7z" a %~dp0"Versions\%ZIP_FILE_PREFIX%_%1" "%UNITS%\*.dfm" -tzip

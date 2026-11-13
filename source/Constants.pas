@@ -6,6 +6,9 @@ const
   ORIGINATOR = 'KED';
   PROGRAM_NAME = 'SeePDF';
 
+  TBL_SCORES = 'scores';
+  TBL_AUDIO = 'audio';
+
 type
   TTuneType = (
     TYPE_OTHER = 0,

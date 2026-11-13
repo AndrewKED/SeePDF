@@ -92,7 +92,8 @@ begin
     'composer TEXT,' +
     'pageCount INTEGER CHECK (pageCount IS NULL OR pageCount >= 0),' +
     'notes TEXT,' +
-    'annotations TEXT' +
+    'annotations TEXT,' +
+    'tempo TEXT' +
     ')'
   );
 

@@ -1,4 +1,4 @@
-object fManageFiles: TfManageFiles
+object fManagePDFs: TfManagePDFs
   Left = 0
   Top = 0
   BorderIcons = []
@@ -57,7 +57,7 @@ object fManageFiles: TfManageFiles
     end
     object scAudio: TStringColumn
       HorzAlign = Center
-      Header = 'Audio available'
+      Header = 'Linked audio'
       HeaderSettings.StyledSettings = [Family, Size, FontColor]
       HeaderSettings.TextSettings.Font.StyleExt = {00070000000000000004000000}
       HeaderSettings.TextSettings.WordWrap = False
@@ -140,6 +140,7 @@ object fManageFiles: TfManageFiles
         TextSettings.Trimming = None
         ParentShowHint = False
         ShowHint = True
+        OnClick = bDeleteClick
       end
       object bSearch: TButton
         Align = Left
@@ -297,17 +298,17 @@ object fManageFiles: TfManageFiles
       ReadOnly = True
       Position.X = 140.000000000000000000
       Position.Y = 50.000000000000000000
-      Size.Width = 356.000000000000000000
+      Size.Width = 516.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
     end
     object eAlternateNames: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 5
+      TabOrder = 3
       ReadOnly = True
       Position.X = 140.000000000000000000
       Position.Y = 80.000000000000000000
-      Size.Width = 356.000000000000000000
+      Size.Width = 516.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
     end
@@ -316,14 +317,14 @@ object fManageFiles: TfManageFiles
       DataDetectorTypes = []
       ReadOnly = True
       Anchors = [akLeft, akTop, akRight]
-      Position.X = 565.000000000000000000
+      Position.X = 745.000000000000000000
       Position.Y = 50.000000000000000000
-      Size.Width = 455.000000000000000000
-      Size.Height = 81.000000000000000000
+      Size.Width = 270.000000000000000000
+      Size.Height = 111.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 6
-      Viewport.Width = 451.000000000000000000
-      Viewport.Height = 77.000000000000000000
+      TabOrder = 8
+      Viewport.Width = 266.000000000000000000
+      Viewport.Height = 107.000000000000000000
     end
     object Name: TLabel
       Position.X = 20.000000000000000000
@@ -332,7 +333,7 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Name'
-      TabOrder = 14
+      TabOrder = 16
     end
     object Label1: TLabel
       Position.X = 20.000000000000000000
@@ -341,7 +342,7 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Alternative name/s'
-      TabOrder = 12
+      TabOrder = 14
     end
     object Label2: TLabel
       Position.X = 20.000000000000000000
@@ -350,7 +351,7 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'File name'
-      TabOrder = 8
+      TabOrder = 9
     end
     object lRelativeFileName: TLabel
       AutoSize = True
@@ -364,13 +365,13 @@ object fManageFiles: TfManageFiles
       TabOrder = 1
     end
     object Label4: TLabel
-      Position.X = 520.000000000000000000
+      Position.X = 700.000000000000000000
       Position.Y = 53.000000000000000000
-      Size.Width = 66.000000000000000000
+      Size.Width = 41.000000000000000000
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Notes'
-      TabOrder = 13
+      TabOrder = 15
     end
     object bOpenFile: TButton
       Position.X = 100.000000000000000000
@@ -390,34 +391,34 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Time signature'
-      TabOrder = 10
+      TabOrder = 12
     end
     object eTimeSignature: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 3
+      TabOrder = 4
       ReadOnly = True
       Position.X = 140.000000000000000000
       Position.Y = 110.000000000000000000
-      Size.Width = 86.000000000000000000
+      Size.Width = 66.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
     end
     object Label3: TLabel
-      Position.X = 245.000000000000000000
+      Position.X = 405.000000000000000000
       Position.Y = 113.000000000000000000
       Size.Width = 56.000000000000000000
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Genre'
-      TabOrder = 9
+      TabOrder = 10
     end
     object cbGenre: TComboBox
-      Position.X = 306.000000000000000000
+      Position.X = 466.000000000000000000
       Position.Y = 110.000000000000000000
       Size.Width = 190.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 38
+      TabOrder = 6
       OnPopup = cbGenrePopup
     end
     object Label6: TLabel
@@ -427,15 +428,34 @@ object fManageFiles: TfManageFiles
       Size.Height = 17.000000000000000000
       Size.PlatformDefault = False
       Text = 'Composer'
-      TabOrder = 11
+      TabOrder = 13
     end
     object eComposer: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 4
+      TabOrder = 7
       ReadOnly = True
       Position.X = 140.000000000000000000
       Position.Y = 140.000000000000000000
       Size.Width = 356.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label7: TLabel
+      Position.X = 225.000000000000000000
+      Position.Y = 113.000000000000000000
+      Size.Width = 86.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Tempo (bpm)'
+      TabOrder = 11
+    end
+    object eTempo: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 5
+      ReadOnly = True
+      Position.X = 315.000000000000000000
+      Position.Y = 110.000000000000000000
+      Size.Width = 66.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
     end

@@ -2,14 +2,26 @@
   Unit: Footswitch.Serial
 
   USB CDC footswitch link via MHumm TCommPortDriver (CPDrv / GetIt).
-  Protocol: KED_SeePDFFootSw docs (P/N/PL/NL, identity SEEPDF-FS1[;version]).
+  Protocol: identity SEEPDF-FS1[;version], pedals P/N/PL/NL.
+
+  Discovery policy:
+  - At Start: try the last-known COM port only (if still present).
+  - While unlinked: poll the COM list; probe only ports that newly appeared
+    (USB plug-in). Do not re-open unchanged ports.
+  - While linked: only watch that the active port is still present.
+  - Probe waits use timer deadlines; RX uses OnReceiveData. Connect/Disconnect
+    remain synchronous Win32 calls (unavoidable with this component).
+
+  Replace source\Footswitch.Serial.pas with this file (rename / copy over),
+  then remove this .new.pas copy from the project if it was added.
 *******************************************************************************}
 unit Footswitch.Serial;
 
 interface
 
 uses
-  System.SysUtils, System.Classes,
+  System.SysUtils,
+  System.Classes,
   Winapi.Windows,
   FMX.Types,
   CPDrv;
@@ -27,26 +39,27 @@ type
     FOwnsTimer: Boolean;
     FTimer: TTimer;
     FLineBuf: RawByteString;
-    FSeenPorts: TStringList;
+    FKnownPorts: TStringList;
     FProbeQueue: TStringList;
     FActivePort: string;
     FFirmwareVersion: string;
     FLinked: Boolean;
     FProbing: Boolean;
     FProbeStart: TDateTime;
-    FProbeDeadline: TDateTime;
     FProbeQueried: Boolean;
     FProbeQuerySent: TDateTime;
-    FLastRepoke: TDateTime;
     FOnPedal: TFootswitchPedalEvent;
     FOnStatusChanged: TFootswitchNotifyEvent;
     procedure ConfigurePortDefaults;
     procedure ClearLinkState;
     procedure SetLinked(ALinked: Boolean);
     procedure NotifyStatus;
+    procedure SetWatchTimer;
+    procedure SetProbeTimer;
     procedure ListComPorts(APorts: TStrings);
     function PortDeviceName(const AComName: string): string;
     function ShortPortName(const ADeviceName: string): string;
+    procedure CopyPortNames(ASource, ADest: TStrings);
     procedure FeedBytes(DataPtr: Pointer; DataSize: DWORD);
     procedure ProcessLine(const ALine: string);
     function TryParseIdentity(const ALine: string;
@@ -54,7 +67,7 @@ type
     procedure BeginProbe(const AComName: string);
     procedure FinishProbeFailure;
     procedure FinishProbeSuccess(const AVersion: string);
-    procedure QueueNewPortsForProbe;
+    procedure QueueAppearedPorts;
     procedure CheckConnectedPortStillPresent;
     procedure AdvanceProbe;
     procedure TimerTick(Sender: TObject);
@@ -78,17 +91,16 @@ type
 implementation
 
 uses
-  System.DateUtils, System.Win.Registry,
+  System.DateUtils,
+  System.Win.Registry,
   Configuration;
 
 const
   CIdentityPrefix = 'SEEPDF-FS1';
-  CProbeTimeoutMs = 2500;     // overall open window
-  CProbeQueryDelayMs = 400;   // wait after open before '?'
-  CProbeReplyWaitMs = 800;    // wait after '?' before giving up
-  CProbeTimerMs = 100;        // while probing / searching
-  CIdleTimerMs = 1000;        // while linked
-  CRepokeLastPortMs = 3000;   // retry last port if still searching
+  CProbeQueryDelayMs = 400;
+  CProbeReplyWaitMs = 800;
+  CProbeTimerMs = 100;
+  CWatchTimerMs = 1000;
 
 //***************************************************************************
 //
@@ -128,6 +140,29 @@ begin
     Result := Copy(Result, 5, MaxInt);
   end; // if
 end; // ShortPortName
+
+//***************************************************************************
+//
+// OPERATION : Copy COM name strings from one list to another.
+//
+// I/P       : ASource : TStrings - Source names.
+//
+//             ADest : TStrings - Cleared then filled.
+//
+// O/P       : None
+//
+//***************************************************************************
+procedure TFootswitchSerial.CopyPortNames(ASource, ADest: TStrings);
+var
+  i: Integer;
+
+begin
+  ADest.Clear;
+  for i := 0 to ASource.Count - 1 do
+  begin
+    ADest.Add(ASource[i]);
+  end; // for
+end; // CopyPortNames
 
 //***************************************************************************
 //
@@ -196,6 +231,7 @@ begin
   FPort.SwFlow := sfNONE;
   FPort.PacketSize := -1;
   FPort.EnableDTROnOpen := True;
+  FPort.OutputTimeout := 100;
 end; // ConfigurePortDefaults
 
 //***************************************************************************
@@ -212,6 +248,7 @@ begin
   FLinked := False;
   FProbing := False;
   FProbeQueried := False;
+  FProbeQuerySent := 0;
   FActivePort := '';
   FFirmwareVersion := '';
   FLineBuf := '';
@@ -256,12 +293,40 @@ end; // NotifyStatus
 
 //***************************************************************************
 //
+// OPERATION : Use the slower timer while only watching the COM list.
+//
+// I/P       : None
+//
+// O/P       : None
+//
+//***************************************************************************
+procedure TFootswitchSerial.SetWatchTimer;
+begin
+  FTimer.Interval := CWatchTimerMs;
+end; // SetWatchTimer
+
+//***************************************************************************
+//
+// OPERATION : Use the faster timer while a probe deadline is active.
+//
+// I/P       : None
+//
+// O/P       : None
+//
+//***************************************************************************
+procedure TFootswitchSerial.SetProbeTimer;
+begin
+  FTimer.Interval := CProbeTimerMs;
+end; // SetProbeTimer
+
+//***************************************************************************
+//
 // OPERATION : Create the footswitch helper around an existing port driver.
 //
 // I/P       : APort : TCommPortDriver - Form-owned CPDrv component.
 //
 //             ATimer : TTimer = nil - Optional form timer; if nil, one is
-//             created and owned by this object (Interval 1000 ms).
+//             created and owned by this object.
 //
 // O/P       : None
 //
@@ -271,9 +336,9 @@ constructor TFootswitchSerial.Create(APort: TCommPortDriver;
 begin
   inherited Create;
   FPort := APort;
-  FSeenPorts := TStringList.Create;
-  FSeenPorts.Sorted := True;
-  FSeenPorts.Duplicates := dupIgnore;
+  FKnownPorts := TStringList.Create;
+  FKnownPorts.Sorted := True;
+  FKnownPorts.Duplicates := dupIgnore;
   FProbeQueue := TStringList.Create;
   ClearLinkState;
 
@@ -285,13 +350,12 @@ begin
   else
   begin
     FTimer := TTimer.Create(nil);
-    FTimer.Interval := 1000;
     FOwnsTimer := True;
   end; // else
 
   FTimer.Enabled := False;
-  FTimer.Interval := CProbeTimerMs;
   FTimer.OnTimer := TimerTick;
+  SetWatchTimer;
   ConfigurePortDefaults;
 end; // Create
 
@@ -308,7 +372,7 @@ destructor TFootswitchSerial.Destroy;
 begin
   Stop;
   FreeAndNil(FProbeQueue);
-  FreeAndNil(FSeenPorts);
+  FreeAndNil(FKnownPorts);
   if FOwnsTimer then
   begin
     FreeAndNil(FTimer);
@@ -318,7 +382,9 @@ end; // Destroy
 
 //***************************************************************************
 //
-// OPERATION : Begin watching for a footswitch (startup full probe + timer).
+// OPERATION : Start watching. Snapshot current COM ports, then probe only
+//             the last-known port when it is still present. Later probes
+//             happen only when a new COM name appears.
 //
 // I/P       : None
 //
@@ -328,50 +394,39 @@ end; // Destroy
 procedure TFootswitchSerial.Start;
 var
   ports: TStringList;
-  i: Integer;
   lastPort: string;
-  idx: Integer;
 
 begin
   ConfigurePortDefaults;
   ClearLinkState;
   FProbeQueue.Clear;
-  FSeenPorts.Clear;
-
-  lastPort := ShortPortName(Trim(progConfig.ReadString('Footswitch', 'Port', '')));
-  FLastRepoke := Now;
+  FKnownPorts.Clear;
 
   ports := TStringList.Create;
   try
     ListComPorts(ports);
+    CopyPortNames(ports, FKnownPorts);
 
-    // Prefer the last successful port when it is still present.
-    if lastPort <> '' then
+    lastPort := ShortPortName(Trim(progConfig.ReadString('Footswitch', 'Port', '')));
+    if (lastPort <> '') and (ports.IndexOf(lastPort) >= 0) then
     begin
-      idx := ports.IndexOf(lastPort);
-      if idx >= 0 then
-      begin
-        FProbeQueue.Add(lastPort);
-        ports.Delete(idx);
-      end; // if
+      FProbeQueue.Add(lastPort);
     end; // if
-
-    for i := 0 to ports.Count - 1 do
-    begin
-      FProbeQueue.Add(ports[i]);
-    end; // for
-
-    for i := 0 to FProbeQueue.Count - 1 do
-    begin
-      FSeenPorts.Add(FProbeQueue[i]);
-    end; // for
   finally
     ports.Free;
   end; // try
 
   FTimer.Enabled := True;
   NotifyStatus;
-  AdvanceProbe;
+  if FProbeQueue.Count > 0 then
+  begin
+    SetProbeTimer;
+    AdvanceProbe;
+  end // if
+  else
+  begin
+    SetWatchTimer;
+  end; // else
 end; // Start
 
 //***************************************************************************
@@ -561,7 +616,7 @@ end; // ProcessLine
 
 //***************************************************************************
 //
-// OPERATION : Open one COM port and start the probe timeout window.
+// OPERATION : Open one COM port and start the non-blocking probe window.
 //
 // I/P       : AComName : string - Short name such as 'COM5'.
 //
@@ -578,13 +633,16 @@ begin
   FLineBuf := '';
   FProbing := True;
   FProbeQueried := False;
+  FProbeQuerySent := 0;
   FActivePort := AComName;
   FFirmwareVersion := '';
   FProbeStart := Now;
-  FProbeDeadline := IncMilliSecond(Now, CProbeTimeoutMs);
+  SetProbeTimer;
+
   FPort.Port := pnCustom;
   FPort.PortName := PortDeviceName(AComName);
 
+  // CreateFile inside Connect can block the UI for some drivers.
   if not FPort.Connect then
   begin
     FinishProbeFailure;
@@ -596,7 +654,7 @@ end; // BeginProbe
 
 //***************************************************************************
 //
-// OPERATION : Close a failed probe and try the next queued port.
+// OPERATION : Close a failed probe and continue with any remaining new ports.
 //
 // I/P       : None
 //
@@ -616,7 +674,6 @@ begin
   FActivePort := '';
   FFirmwareVersion := '';
   FLineBuf := '';
-  FTimer.Interval := CProbeTimerMs;
   SetLinked(False);
   AdvanceProbe;
 end; // FinishProbeFailure
@@ -634,20 +691,21 @@ procedure TFootswitchSerial.FinishProbeSuccess(const AVersion: string);
 begin
   FProbing := False;
   FProbeQueried := False;
+  FProbeQuerySent := 0;
   FProbeQueue.Clear;
   FFirmwareVersion := AVersion;
   if FActivePort <> '' then
   begin
     progConfig.WriteString('Footswitch', 'Port', ShortPortName(FActivePort));
   end; // if
-  FTimer.Interval := CIdleTimerMs;
+  SetWatchTimer;
   SetLinked(True);
   NotifyStatus;
-end; // FinishProbeSuccessend; // FinishProbeSuccess
+end; // FinishProbeSuccess
 
 //***************************************************************************
 //
-// OPERATION : Start the next queued probe, if any and not already probing.
+// OPERATION : Start the next queued probe, if any.
 //
 // I/P       : None
 //
@@ -666,6 +724,7 @@ begin
 
   if FProbeQueue.Count = 0 then
   begin
+    SetWatchTimer;
     NotifyStatus;
     Exit;
   end; // if
@@ -677,14 +736,15 @@ end; // AdvanceProbe
 
 //***************************************************************************
 //
-// OPERATION : Queue COM ports that appeared since the last seen snapshot.
+// OPERATION : Compare the live COM list to the known snapshot and queue only
+//             newly appeared ports for probing.
 //
 // I/P       : None
 //
 // O/P       : None
 //
 //***************************************************************************
-procedure TFootswitchSerial.QueueNewPortsForProbe;
+procedure TFootswitchSerial.QueueAppearedPorts;
 var
   current: TStringList;
   i: Integer;
@@ -694,32 +754,29 @@ begin
   current := TStringList.Create;
   try
     ListComPorts(current);
+
     for i := 0 to current.Count - 1 do
     begin
       name := current[i];
-      if FSeenPorts.IndexOf(name) < 0 then
+      if FKnownPorts.IndexOf(name) < 0 then
       begin
-        FProbeQueue.Add(name);
-        FSeenPorts.Add(name);
+        if FProbeQueue.IndexOf(name) < 0 then
+        begin
+          FProbeQueue.Add(name);
+        end; // if
       end; // if
     end; // for
 
-    // Drop disappeared ports from the seen set so a later re-plug re-probes.
-    for i := FSeenPorts.Count - 1 downto 0 do
-    begin
-      if current.IndexOf(FSeenPorts[i]) < 0 then
-      begin
-        FSeenPorts.Delete(i);
-      end; // if
-    end; // for
+    CopyPortNames(current, FKnownPorts);
   finally
     current.Free;
   end; // try
-end; // QueueNewPortsForProbe
+end; // QueueAppearedPorts
 
 //***************************************************************************
 //
-// OPERATION : If the linked COM port vanished, drop the link and rescan.
+// OPERATION : If the linked COM port vanished, drop the link and resume
+//             watching for a newly appeared port.
 //
 // I/P       : None
 //
@@ -729,6 +786,7 @@ end; // QueueNewPortsForProbe
 procedure TFootswitchSerial.CheckConnectedPortStillPresent;
 var
   current: TStringList;
+  gone: Boolean;
 
 begin
   if not FLinked then
@@ -736,38 +794,41 @@ begin
     Exit;
   end; // if
 
-  if (not FPort.Connected) or (FActivePort = '') then
+  gone := (not FPort.Connected) or (FActivePort = '');
+  if not gone then
+  begin
+    current := TStringList.Create;
+    try
+      ListComPorts(current);
+      gone := current.IndexOf(FActivePort) < 0;
+      CopyPortNames(current, FKnownPorts);
+    finally
+      current.Free;
+    end; // try
+  end // if
+  else
+  begin
+    QueueAppearedPorts;
+  end; // else
+
+  if gone then
   begin
     if FPort.Connected then
     begin
       FPort.Disconnect;
     end; // if
     ClearLinkState;
+    SetWatchTimer;
     NotifyStatus;
-    QueueNewPortsForProbe;
+    QueueAppearedPorts;
     AdvanceProbe;
-    Exit;
   end; // if
-
-  current := TStringList.Create;
-  try
-    ListComPorts(current);
-    if current.IndexOf(FActivePort) < 0 then
-    begin
-      FPort.Disconnect;
-      ClearLinkState;
-      NotifyStatus;
-      QueueNewPortsForProbe;
-      AdvanceProbe;
-    end; // if
-  finally
-    current.Free;
-  end; // try
 end; // CheckConnectedPortStillPresent
 
 //***************************************************************************
 //
-// OPERATION : Periodic watch: probe timeouts, hotplug, and unplug checks.
+// OPERATION : Drive probe deadlines, linked presence checks, and COM-list
+//             change detection. Does not Sleep; Connect may still block.
 //
 // I/P       : None
 //
@@ -777,7 +838,6 @@ end; // CheckConnectedPortStillPresent
 procedure TFootswitchSerial.Tick;
 var
   elapsedMs: Int64;
-  lastPort: string;
 
 begin
   if FProbing then
@@ -790,7 +850,7 @@ begin
       FProbeQueried := True;
       FProbeQuerySent := Now;
       FPort.SendString('?' + AnsiChar(10));
-      Exit; // give RX a chance before any timeout check
+      Exit;
     end; // if
 
     if FProbeQueried then
@@ -800,7 +860,7 @@ begin
         FinishProbeFailure;
       end; // if
     end // if
-    else if elapsedMs >= CProbeTimeoutMs then
+    else if elapsedMs >= (CProbeQueryDelayMs + CProbeReplyWaitMs) then
     begin
       FinishProbeFailure;
     end; // else if
@@ -809,27 +869,11 @@ begin
 
   if FLinked then
   begin
-    FTimer.Interval := CIdleTimerMs;
     CheckConnectedPortStillPresent;
     Exit;
   end; // if
 
-  FTimer.Interval := CProbeTimerMs;
-  QueueNewPortsForProbe;
-
-  // If the startup scan finished with nothing, periodically retry the
-  // last-known port (it is already in FSeenPorts, so hotplug alone skips it).
-  if (FProbeQueue.Count = 0) and
-    (MilliSecondsBetween(Now, FLastRepoke) >= CRepokeLastPortMs) then
-  begin
-    FLastRepoke := Now;
-    lastPort := ShortPortName(Trim(progConfig.ReadString('Footswitch', 'Port', '')));
-    if lastPort <> '' then
-    begin
-      FProbeQueue.Add(lastPort);
-    end; // if
-  end; // if
-
+  QueueAppearedPorts;
   AdvanceProbe;
 end; // Tick
 

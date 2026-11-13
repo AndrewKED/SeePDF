@@ -47,7 +47,8 @@ type
     procedure OnPdfViewerPageChanged(Sender: TObject);
     procedure OpenSettings;
     procedure AboutInfo;
-    procedure ManageFiles;
+    procedure ManagePDFs;
+    procedure ManageAudio;
     procedure ManageSets;
     procedure FootPedal(Sender: TObject; Pedal: TFootswitchPedal);
     procedure FootStatusChanged(Sender: TObject);
@@ -69,7 +70,8 @@ implementation
 uses
   System.IOUtils,
   Configuration,
-  Menu.Form, Settings.Form, ManageFiles.Form, ManageSets.Form,About.Form,
+  Menu.Form, Settings.Form, ManagePDFs.Form, ManageAudio.Form, ManageSets.Form,
+  About.Form,
   Font_Ops, Form_Ops;
 
 {$R *.fmx}
@@ -124,44 +126,51 @@ end; // FormDestroy
 
 //***************************************************************************
 //
-// OPERATION : Ask for a PDF and load it into the viewer.
+// OPERATION :
 //
 // I/P       : None
 //
 // O/P       : None
 //
 //***************************************************************************
-procedure TfMain.ManageFiles;
+procedure TfMain.ManagePDFs;
 var
-  fManageFiles : TfManageFiles;
+  fManagePDFs : TfManagePDFs;
 
 begin
-  fManageFiles := TfManageFiles.Create(Self);
+  fManagePDFs := TfManagePDFs.Create(Self);
   try
-    if ((fManageFiles.ShowModal = mrOk) and
-        (fManageFiles.SelectedFilePath <> '')) then
-      LoadPdfFile(fManageFiles.SelectedFilePath);
+    if ((fManagePDFs.ShowModal = mrOk) and
+        (fManagePDFs.SelectedFilePath <> '')) then
+      LoadPdfFile(fManagePDFs.SelectedFilePath);
   finally
-    FreeAndNil(fManageFiles);
+    FreeAndNil(fManagePDFs);
   end; // try
+end; // ManagePDFs
 
-//  OpenDialog.Title := 'Open PDF File';
-//  OpenDialog.Filter := 'PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*';
-//  OpenDialog.DefaultExt := 'pdf';
-//  OpenDialog.Options := [TOpenOption.ofFileMustExist, TOpenOption.ofEnableSizing];
+//***************************************************************************
 //
-//  if OpenDialog.Execute then
-//  begin
-//    if TPath.GetExtension(OpenDialog.FileName).ToLower = '.pdf' then
-//    begin
-//      LoadPdfFile(OpenDialog.FileName);
-//    end // if
-//    else
-//    begin
-//      ShowMessage('Please select a PDF file.');
-//    end; // else
-//  end; // if
-end; // ManageFiles
+// OPERATION :
+//
+// I/P       : None
+//
+// O/P       : None
+//
+//***************************************************************************
+procedure TfMain.ManageAudio;
+var
+  fManageAudio : TfManageAudio;
+
+begin
+  fManageAudio := TfManageAudio.Create(Self);
+  try
+    if ((fManageAudio.ShowModal = mrOk) and
+        (fManageAudio.SelectedFilePath <> '')) then
+      LoadPdfFile(fManageAudio.SelectedFilePath);
+  finally
+    FreeAndNil(fManageAudio);
+  end; // try
+end; // ManagePDFs
 
 //***************************************************************************
 //
@@ -247,8 +256,10 @@ begin
   try
     fMenu.ShowModal;
     case fMenu.idOperation of
-      OP_FILES :
-        ManageFiles;
+      OP_PDFS :
+        ManagePDFs;
+      OP_AUDIO :
+        ManageAudio;
       OP_SETS :
         ManageSets;
       OP_SETTINGS :

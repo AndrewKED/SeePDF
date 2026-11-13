@@ -1,4 +1,4 @@
-﻿unit ManageFiles.Form;
+﻿unit ManageAudio.Form;
 
 interface
 
@@ -9,11 +9,10 @@ uses
   FMX.Grid, FMX.ScrollBox, FMX.Memo.Types, FMX.Memo, FMX.ListBox;
 
 type
-  TfManageFiles = class(TForm)
+  TfManageAudio = class(TForm)
     OpenDialog: TOpenDialog;
     sgFiles: TStringGrid;
     scTitle: TStringColumn;
-    scAudio: TStringColumn;
     pBottom: TPanel;
     gbDetails: TGroupBox;
     eName: TEdit;
@@ -29,20 +28,15 @@ type
     bEdit: TButton;
     bDelete: TButton;
     bSearch: TButton;
-    bAudio: TButton;
     pEdit: TPanel;
     bAccept: TButton;
     bCancel: TButton;
     bClose: TButton;
     bOpenFile: TButton;
-    bView: TButton;
-    Label5: TLabel;
-    eTimeSignature: TEdit;
-    scTimeSignature: TStringColumn;
-    Label3: TLabel;
-    cbGenre: TComboBox;
+    bListen: TButton;
     Label6: TLabel;
-    eComposer: TEdit;
+    ePerformer: TEdit;
+    scPDF: TStringColumn;
     procedure bAddClick(Sender: TObject);
     procedure bEditClick(Sender: TObject);
     procedure bAcceptClick(Sender: TObject);
@@ -56,35 +50,32 @@ type
     procedure FormResize(Sender: TObject);
     procedure sgFilesHeaderClick(Column: TColumn);
     procedure sgFilesCellDblClick(const Column: TColumn; const Row: Integer);
-    procedure bViewClick(Sender: TObject);
-    procedure cbGenrePopup(Sender: TObject);
+    procedure bListenClick(Sender: TObject);
+    procedure bDeleteClick(Sender: TObject);
   private
     { Private declarations }
     type
-      TScoreDetail = record
+      TRecordDetail = record
         Id : Int64;
         AlternateTitle : String;
         Path : String;
         Notes : String;
-        TimeSignature : String;
-        Genre : Integer;
-        Composer : String;
+        Performer : String;
       end;
     var
-      scoreDetails : TArray<TScoreDetail>;
-      editingScore : Boolean;
-      addingScore : Boolean;
+      recordDetails : TArray<TRecordDetail>;
+      editingRecord : Boolean;
+      addingRecord : Boolean;
       sortFwd : Boolean;
       savedId : Int64;
       FselectedFilePath : String;
-    procedure SelectGenre(const genreId : Integer);
     procedure SetEditing(const editing : Boolean);
-    procedure RepairScorePaths;
-    procedure LoadScores(const selectId : Int64);
-    procedure ShowSelectedScore;
-    function ScoreAlreadyListed(const scoreHash : String;
-                                const scorePath : String;
-                                out existingTitle : String) : Boolean;
+    procedure RepairFilePaths;
+    procedure LoadRecords(const selectId : Int64);
+    procedure ShowSelectedRecord;
+    function FileAlreadyListed(const fileHash : String;
+                               const filePath : String;
+                               out existingTitle : String) : Boolean;
     procedure LayoutFileColumns;
     function VerticalScrollBarWidth : Single;
   public
@@ -93,7 +84,7 @@ type
   end;
 
 var
-  fManageFiles: TfManageFiles;
+  fManageAudio: TfManageAudio;
 
 implementation
 
@@ -101,7 +92,6 @@ uses
   System.IOUtils,
 {$IFDEF MSWINDOWS}
   WinApi.Windows,
-  Vcl.Dialogs,
 {$ENDIF}
   Constants, Configuration, Data,
   Hash_Ops, FMX.Grid_Ops, Str_Ops;
@@ -110,113 +100,84 @@ uses
 
 //***************************************************************************
 //
-// OPERATION : Select the genre combo item that matches the stored value.
-//
-// I/P : genre : Integer - Genre id
-//
-// O/P : None
-//
-//***************************************************************************
-procedure TfManageFiles.SelectGenre(const genreId : Integer);
-var
-  i : Integer;
-
-begin
-  cbGenre.ItemIndex := 0;
-  for i := 0 to cbGenre.Items.Count - 1 do
-  begin
-    if NativeInt(cbGenre.Items.Objects[i]) = genreId then
-    begin
-      cbGenre.ItemIndex := i;
-      Exit;
-    end; // if
-  end; // for
-end; // SelectGenre
-
-//***************************************************************************
-//
-// OPERATION : Show the score for the selected grid row in the details
+// OPERATION : Show the record for the selected grid row in the details
 //             panel. The location is the stored path relative to the
-//             configured PDF folder.
+//             configured audio folder.
 //
 // I/P : None
 //
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.ShowSelectedScore;
+procedure TfManageAudio.ShowSelectedRecord;
 var
   row : Integer;
-  pdfDir : String;
+  rootDir : String;
   storedPath : String;
   fullBase : String;
   fullPath : String;
 
 begin
   row := sgFiles.Selected;
-  if (row < 0) or (row >= Length(scoreDetails)) then
+  if (row < 0) or (row >= Length(recordDetails)) then
   begin
     eName.Text := '';
     eAlternateNames.Text := '';
-    eTimeSignature.Text := '';
-    eComposer.Text := '';
-    cbGenre.ItemIndex := 0;
+    ePerformer.Text := '';
     lRelativeFileName.Text := '';
     memNotes.Text := '';
     Exit;
   end; // if
 
   eName.Text := sgFiles.Cells[0, row];
-  eAlternateNames.Text := scoreDetails[row].AlternateTitle;
-  eTimeSignature.Text := scoreDetails[row].TimeSignature;
-  eComposer.Text := scoreDetails[row].Composer;
-  memNotes.Text := scoreDetails[row].Notes;
-  SelectGenre(scoreDetails[row].Genre);
+  eAlternateNames.Text := recordDetails[row].AlternateTitle;
+  ePerformer.Text := recordDetails[row].Performer;
+  memNotes.Text := recordDetails[row].Notes;
 
-  storedPath := scoreDetails[row].Path;
+  storedPath := recordDetails[row].Path;
   if storedPath = '' then
     lRelativeFileName.Text := ''
   else if TPath.IsRelativePath(storedPath) then
     lRelativeFileName.Text := storedPath
   else
   begin
-    pdfDir := progConfig.ReadString('Files', 'PDF Dir', TPath.GetDocumentsPath);
-    fullBase := IncludeTrailingPathDelimiter(TPath.GetFullPath(pdfDir));
+    rootDir := progConfig.ReadString('Files', 'Audio Dir', TPath.GetDocumentsPath);
+    fullBase := IncludeTrailingPathDelimiter(TPath.GetFullPath(rootDir));
     fullPath := TPath.GetFullPath(storedPath);
     if fullPath.StartsWith(fullBase, True) then
       lRelativeFileName.Text := fullPath.Substring(fullBase.Length)
     else
       lRelativeFileName.Text := storedPath;
   end; // if
-end; // ShowSelectedScore
+end; // ShowSelectedRecord
 
 //***************************************************************************
 //
-// OPERATION : Report whether the scores table already has this PDF, by
+// OPERATION : Report whether the records table already has this file, by
 //             file hash or by relative path.
 //
-// I/P : scoreHash : String - SHA-256 of the PDF file.
+// I/P : fileHash : String - SHA-256 of the PDF file.
 //
-//       scorePath : String - Path relative to the PDF folder.
+//       filePath : String - Path relative to the PDF folder.
 //
 //       existingTitle : String - Title of the matching row, when found.
 //
-// O/P : Boolean - TRUE when a matching score already exists.
+// O/P : Boolean - TRUE when a matching file already exists.
 //
 //***************************************************************************
-function TfManageFiles.ScoreAlreadyListed(const scoreHash : String;
-                                          const scorePath : String;
-                                          out existingTitle : String) : Boolean;
+function TfManageAudio.FileAlreadyListed(const fileHash : String;
+                                         const filePath : String;
+                                         out existingTitle : String) : Boolean;
 begin
   existingTitle := '';
   DataModule1.query.Close;
   DataModule1.query.SQL.Text :=
-    'SELECT title FROM scores ' +
+    'SELECT title FROM audio ' +
     'WHERE (fileHash = :fileHash) OR ' +
     '(lower(path) = lower(:path)) ' +
     'LIMIT 1';
-  DataModule1.query.ParamByName('fileHash').AsString := scoreHash;
-  DataModule1.query.ParamByName('path').AsString := scorePath;
+  DataModule1.query.ParamByName('fileHash').AsString := fileHash;
+  DataModule1.query.ParamByName('path').AsString := filePath;
   DataModule1.query.Open;
   try
     Result := not DataModule1.query.IsEmpty;
@@ -225,7 +186,7 @@ begin
   finally
     DataModule1.query.Close;
   end; // try
-end; // ScoreAlreadyListed
+end; // FileAlreadyListed
 
 //***************************************************************************
 //
@@ -236,17 +197,14 @@ end; // ScoreAlreadyListed
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.SetEditing(const editing : Boolean);
+procedure TfManageAudio.SetEditing(const editing : Boolean);
 begin
-  editingScore := editing;
+  editingRecord := editing;
 
   eName.ReadOnly := not editing;
   eAlternateNames.ReadOnly := not editing;
-  eTimeSignature.ReadOnly := not editing;
-  eComposer.ReadOnly := not editing;
+  ePerformer.ReadOnly := not editing;
   memNotes.ReadOnly := not editing;
-  cbGenre.HitTest := editing;
-  cbGenre.CanFocus := editing;
   bOpenFile.Visible := editing;
 
   sgFiles.Enabled := not editing;
@@ -256,17 +214,17 @@ end;
 
 //***************************************************************************
 //
-// OPERATION : If a stored PDF is no longer at its path, find a file in
-//             the PDF folder with the same SHA-256 and store that path.
+// OPERATION : If a stored Audio file is no longer at its path, find a file in
+//             the Audio folder with the same SHA-256 and store that path.
 //
 // I/P : None
 //
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.RepairScorePaths;
+procedure TfManageAudio.RepairfilePaths;
 type
-  TScoreFile = record
+  TRecordFile = record
     Id : Int64;
     Path : String;
     FileHash : String;
@@ -275,7 +233,7 @@ type
 var
   pdfDir : String;
   fullBase : String;
-  rows : TArray<TScoreFile>;
+  rows : TArray<TRecordFile>;
   pdfFiles : TArray<String>;
   row : Integer;
   fileIndex : Integer;
@@ -284,12 +242,12 @@ var
   relativePath : String;
 
 begin
-  pdfDir := progConfig.ReadString('Files', 'PDF Dir', TPath.GetDocumentsPath);
+  pdfDir := progConfig.ReadString('Files', 'Audio Dir', TPath.GetDocumentsPath);
   if not TDirectory.Exists(pdfDir) then
     Exit;
 
   DataModule1.query.Close;
-  DataModule1.query.SQL.Text := 'SELECT id, path, fileHash FROM scores';
+  DataModule1.query.SQL.Text := 'SELECT id, path, fileHash FROM audio';
   DataModule1.query.Open;
   try
     row := 0;
@@ -320,7 +278,7 @@ begin
     Exit;
 
   try
-    pdfFiles := TDirectory.GetFiles(pdfDir, '*.pdf',
+    pdfFiles := TDirectory.GetFiles(pdfDir, '*.mp3',
       TSearchOption.soAllDirectories);
   except
     Exit;
@@ -347,18 +305,18 @@ begin
       relativePath := relativePath.Substring(fullBase.Length);
       DataModule1.query.Close;
       DataModule1.query.SQL.Text :=
-        'UPDATE scores SET path = :path WHERE id = :id';
+        'UPDATE audio SET path = :path WHERE id = :id';
       DataModule1.query.ParamByName('path').AsString := relativePath;
       DataModule1.query.ParamByName('id').AsLargeInt := rows[row].Id;
       DataModule1.query.ExecSQL;
       Break;
     end; // for
   end; // for
-end; // RepairScorePaths
+end; // RepairFilePaths
 
 //***************************************************************************
 //
-// OPERATION : Reload the scores grid in alphabetical order and select
+// OPERATION : Reload the records grid in alphabetical order and select
 //             the row with the given id.
 //
 // I/P : selectId : Int64 - Row to select. The first row is selected when
@@ -367,14 +325,14 @@ end; // RepairScorePaths
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.LoadScores(const selectId : Int64);
+procedure TfManageAudio.LoadRecords(const selectId : Int64);
 var
   row : Integer;
   selectRow : Integer;
 
 begin
 {TODO -oAndrew Spencer -cGeneric : Repairing should be a maintenance function, under Settings, - not every time}
-  RepairScorePaths;
+  RepairFilePaths;
 
   if (sortFwd) then
   begin
@@ -389,15 +347,15 @@ begin
   sgFiles.BeginUpdate;
   try
     sgFiles.RowCount := 0;
-    SetLength(scoreDetails, 0);
+    SetLength(recordDetails, 0);
     DataModule1.query.Close;
     DataModule1.query.SQL.Text :=
       'SELECT id, title, path, alternateTitle, notes, ' +
-      'timeSignature, genre, composer, ' +
+      'performer, ' +
       'CASE WHEN EXISTS (' +
-      '  SELECT 1 FROM linking WHERE linking.idScore = scores.id' +
-      ') THEN ''Yes'' ELSE ''No'' END AS audioAvailable ' +
-      'FROM scores ' +
+      '  SELECT 1 FROM linking WHERE linking.idAudio = audio.id' +
+      ') THEN ''Yes'' ELSE ''No'' END AS scoreAvailable ' +
+      'FROM audio ' +
       IfThenS(sortFwd,
         'ORDER BY title COLLATE NOCASE',
         'ORDER BY title COLLATE NOCASE DESC'
@@ -407,29 +365,23 @@ begin
     row := 0;
     while not DataModule1.query.Eof do
     begin
-      SetLength(scoreDetails, row + 1);
+      SetLength(recordDetails, row + 1);
       sgFiles.RowCount := row + 1;
       sgFiles.Cells[0, row] :=
         DataModule1.query.FieldByName('title').AsString;
       sgFiles.Cells[1, row] :=
-        DataModule1.query.FieldByName('timeSignature').AsString;
-      sgFiles.Cells[2, row] :=
-        DataModule1.query.FieldByName('audioAvailable').AsString;
-      scoreDetails[row].Id :=
+        DataModule1.query.FieldByName('scoreAvailable').AsString;
+      recordDetails[row].Id :=
         DataModule1.query.FieldByName('id').AsLargeInt;
-      scoreDetails[row].AlternateTitle :=
+      recordDetails[row].AlternateTitle :=
         DataModule1.query.FieldByName('alternateTitle').AsString;
-      scoreDetails[row].Path :=
+      recordDetails[row].Path :=
         DataModule1.query.FieldByName('path').AsString;
-      scoreDetails[row].Notes :=
+      recordDetails[row].Notes :=
         DataModule1.query.FieldByName('notes').AsString;
-      scoreDetails[row].TimeSignature :=
-        DataModule1.query.FieldByName('timeSignature').AsString;
-      scoreDetails[row].Genre :=
-        DataModule1.query.FieldByName('genre').AsInteger;
-        scoreDetails[row].Composer :=
-        DataModule1.query.FieldByName('composer').AsString;
-      if scoreDetails[row].Id = selectId then
+        recordDetails[row].Performer :=
+        DataModule1.query.FieldByName('performer').AsString;
+      if recordDetails[row].Id = selectId then
         selectRow := row;
       Inc(row);
       DataModule1.query.Next;
@@ -443,12 +395,12 @@ begin
   if sgFiles.RowCount > 0 then
   begin
     sgFiles.Selected := selectRow;
-    savedId := scoreDetails[selectRow].Id;
+    savedId := recordDetails[selectRow].Id;
   end // if
   else
     sgFiles.Selected := -1;
-  ShowSelectedScore;
-end; // LoadScores
+  ShowSelectedRecord;
+end; // LoadRecords
 
 //***************************************************************************
 //
@@ -459,14 +411,14 @@ end; // LoadScores
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.sgFilesSelChanged(Sender: TObject);
+procedure TfManageAudio.sgFilesSelChanged(Sender: TObject);
 begin
   if ((sgFiles.Selected >= 0) and
-      (sgFiles.Selected < Length(scoreDetails))) then
+      (sgFiles.Selected < Length(recordDetails))) then
   begin
-    savedId := scoreDetails[sgFiles.Selected].Id;
+    savedId := recordDetails[sgFiles.Selected].Id;
   end; // if
-  ShowSelectedScore;
+  ShowSelectedRecord;
 end; // sgFilesSelChanged
 
 //***************************************************************************
@@ -478,20 +430,19 @@ end; // sgFilesSelChanged
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.bAddClick(Sender: TObject);
+procedure TfManageAudio.bAddClick(Sender: TObject);
 begin
-  addingScore := True;
+  addingRecord := True;
   SetEditing(TRUE);
 
   eName.Text := '';
   eAlternateNames.Text := '';
-  eTimeSignature.Text := '';
-  eComposer.Text := '';
-  cbGenre.ItemIndex := 0;
+  ePerformer.Text := '';
   lRelativeFileName.Text := '';
   memNotes.Text := '';
 
   bOpenFile.SetFocus;
+  bOpenFileClick(Sender);
 end;
 
 //***************************************************************************
@@ -503,11 +454,11 @@ end;
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.bCancelClick(Sender: TObject);
+procedure TfManageAudio.bCancelClick(Sender: TObject);
 begin
-  addingScore := False;
+  addingRecord := False;
   SetEditing(FALSE);
-  ShowSelectedScore;
+  ShowSelectedRecord;
 end;
 
 //***************************************************************************
@@ -519,15 +470,15 @@ end;
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.bEditClick(Sender: TObject);
+procedure TfManageAudio.bEditClick(Sender: TObject);
 begin
   if ((sgFiles.Selected < 0) or
-      (sgFiles.Selected >= Length(scoreDetails))) then
+      (sgFiles.Selected >= Length(recordDetails))) then
   begin
     Exit;
   end;
 
-  addingScore := False;
+  addingRecord := False;
   SetEditing(TRUE);
 
   eName.SetFocus;
@@ -543,39 +494,54 @@ end;
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.bOpenFileClick(Sender: TObject);
+procedure TfManageAudio.bOpenFileClick(Sender: TObject);
 var
-  pdfDir : String;
+  rootDir : String;
   fullBase : String;
   fullPath : String;
   relativePath : String;
 
 begin
-  pdfDir := progConfig.ReadString('Files', 'PDF Dir', TPath.GetDocumentsPath);
-  OpenDialog.InitialDir := pdfDir;
+  rootDir := progConfig.ReadString('Files', 'Audio Dir', TPath.GetDocumentsPath);
+
+  relativePath := Trim(lRelativeFileName.Text);
+  if relativePath = '' then
+  begin
+    // Adding, or no file chosen yet
+    OpenDialog.InitialDir := rootDir;
+    OpenDialog.FileName := '';
+  end // if
+  else
+  begin
+    // Editing: show the current file (may be in a subfolder)
+    fullPath := TPath.GetFullPath(TPath.Combine(rootDir, relativePath));
+    OpenDialog.InitialDir := TPath.GetDirectoryName(fullPath);
+    OpenDialog.FileName := TPath.GetFileName(relativePath);;
+  end; // else
+
   if not OpenDialog.Execute then
     Exit;
 
   fullPath := OpenDialog.FileName;
   if TPath.IsRelativePath(fullPath) then
-    fullPath := TPath.Combine(pdfDir, fullPath);
+    fullPath := TPath.Combine(rootDir, fullPath);
   fullPath := TPath.GetFullPath(fullPath);
   fullPath := fullPath.Replace('/', TPath.DirectorySeparatorChar);
 
-  if not SameText(TPath.GetExtension(fullPath), '.pdf') then
+  if not SameText(TPath.GetExtension(fullPath), '.mp3') then
   begin
-    FMX.Dialogs.ShowMessage('Choose a PDF file.');
+    FMX.Dialogs.ShowMessage('Choose an audio file.');
     Exit;
   end; // if
 
-  fullBase := TPath.GetFullPath(ExcludeTrailingPathDelimiter(pdfDir));
+  fullBase := TPath.GetFullPath(ExcludeTrailingPathDelimiter(rootDir));
   fullBase := IncludeTrailingPathDelimiter(
     fullBase.Replace('/', TPath.DirectorySeparatorChar));
 
   if not fullPath.StartsWith(fullBase, True) then
   begin
     FMX.Dialogs.ShowMessage(
-      'Choose a PDF file inside the configured PDF folder.');
+      'Choose an audio file inside the configured audio folder.');
     Exit;
   end; // if
 
@@ -594,7 +560,7 @@ end; // bOpenFileClick
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.bViewClick(Sender: TObject);
+procedure TfManageAudio.bListenClick(Sender: TObject);
 begin
   sgFilesCellDblClick(sgFiles.Columns[0], sgFiles.Row);
 end;
@@ -608,10 +574,9 @@ end;
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.cbGenrePopup(Sender: TObject);
+procedure TfManageAudio.bCloseClick(Sender: TObject);
 begin
- if not editingScore then
-    cbGenre.DropDown; // already open → toggle closed
+  Close;
 end;
 
 //***************************************************************************
@@ -623,9 +588,11 @@ end;
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.bCloseClick(Sender: TObject);
+procedure TfManageAudio.bDeleteClick(Sender: TObject);
 begin
-  Close;
+  // this will delete the row and any link to an audio file.
+  // It will not delete the PDF or the audio file
+  // The row can not be deleted if it is in a set
 end;
 
 //***************************************************************************
@@ -637,7 +604,7 @@ end;
 // O/P : Single - The scrollbar width, or 0 when it is not showing.
 //
 //***************************************************************************
-function TfManageFiles.VerticalScrollBarWidth : Single;
+function TfManageAudio.VerticalScrollBarWidth : Single;
 
   function FindBar(parent : TFmxObject) : TScrollBar;
   var
@@ -681,9 +648,9 @@ end; // VerticalScrollBarWidth
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.LayoutFileColumns;
+procedure TfManageAudio.LayoutFileColumns;
 begin
-  ResizeGridColumns(sgFiles, [7, 2, 1]);
+  ResizeGridColumns(sgFiles, [7, 1]);
 end; // LayoutFileColumns
 
 //***************************************************************************
@@ -695,9 +662,11 @@ end; // LayoutFileColumns
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.FormActivate(Sender: TObject);
+procedure TfManageAudio.FormActivate(Sender: TObject);
 begin
   LayoutFileColumns;
+
+  sgFiles.SetFocus;
 end;
 
 //***************************************************************************
@@ -709,14 +678,14 @@ end;
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.FormResize(Sender: TObject);
+procedure TfManageAudio.FormResize(Sender: TObject);
 begin
   LayoutFileColumns;
 end;
 
 //***************************************************************************
 //
-// OPERATION : Load the scores table into the grid, in alphabetical order
+// OPERATION : Load the audio table into the grid, in alphabetical order
 //             of title.
 //
 // I/P : Sender : TObject - The form being created.
@@ -724,23 +693,14 @@ end;
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.FormCreate(Sender: TObject);
-var
-  n : Integer;
-
+procedure TfManageAudio.FormCreate(Sender: TObject);
 begin
   FselectedFilePath := '';
-  addingScore := False;
+  addingRecord := False;
   SetEditing(FALSE);
 
-  cbGenre.Items.Clear;
-  for n := Low(TUNE_TYPES) to High(TUNE_TYPES) do
-  begin
-    cbGenre.Items.AddObject(TUNE_TYPES[n].name, TObject(TUNE_TYPES[n].id));
-  end; // for
-
   sortFwd := True;
-  LoadScores(-1);
+  LoadRecords(-1);
 end; // FormCreate
 
 //***************************************************************************
@@ -752,10 +712,10 @@ end; // FormCreate
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.sgFilesCellClick(const Column: TColumn;
+procedure TfManageAudio.sgFilesCellClick(const Column: TColumn;
   const Row: Integer);
 begin
-  ShowSelectedScore;
+  ShowSelectedRecord;
 end;
 
 //***************************************************************************
@@ -770,28 +730,28 @@ end;
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.sgFilesCellDblClick(const Column: TColumn;
+procedure TfManageAudio.sgFilesCellDblClick(const Column: TColumn;
   const Row: Integer);
 var
-  pdfDir : String;
+  rootDir : String;
   storedPath : String;
 
 begin
-  if editingScore then
+  if editingRecord then
     Exit;
-  if (Row < 0) or (Row >= Length(scoreDetails)) then
+  if (Row < 0) or (Row >= Length(recordDetails)) then
     Exit;
 
-  storedPath := Trim(scoreDetails[Row].Path);
+  storedPath := Trim(recordDetails[Row].Path);
   if storedPath = '' then
   begin
-    FMX.Dialogs.ShowMessage('This score has no file path.');
+    FMX.Dialogs.ShowMessage('This audio has no file path.');
     Exit;
   end; // if
 
-  pdfDir := progConfig.ReadString('Files', 'PDF Dir', TPath.GetDocumentsPath);
+  rootDir := progConfig.ReadString('Files', 'Audio Dir', TPath.GetDocumentsPath);
   if TPath.IsRelativePath(storedPath) then
-    FselectedFilePath := TPath.Combine(pdfDir, storedPath)
+    FselectedFilePath := TPath.Combine(rootDir, storedPath)
   else
     FselectedFilePath := storedPath;
 
@@ -814,18 +774,18 @@ end; // sgFilesCellDblClick
 //  O/P       :
 //
 //***************************************************************************
-procedure TfManageFiles.sgFilesHeaderClick(Column: TColumn);
+procedure TfManageAudio.sgFilesHeaderClick(Column: TColumn);
 begin
-  if ((Column = scTitle) and (not editingScore)) then
+  if ((Column = scTitle) and (not editingRecord)) then
   begin
     sortFwd := not sortFwd;
-    LoadScores(savedId);
+    LoadRecords(savedId);
   end; // if
 end;
 
 //***************************************************************************
 //
-// OPERATION : Insert a new score, or update the selected score, then
+// OPERATION : Insert a new audio, or update the selected audio, then
 //             reload the grid.
 //
 // I/P : Sender : TObject - The button that was clicked.
@@ -833,58 +793,52 @@ end;
 // O/P : None
 //
 //***************************************************************************
-procedure TfManageFiles.bAcceptClick(Sender: TObject);
+procedure TfManageAudio.bAcceptClick(Sender: TObject);
 var
-  scoreName : String;
-  scorePath : String;
+  fileName : String;
+  filePath : String;
   row : Integer;
   fullFile : String;
-  scoreHash : String;
+  fileHash : String;
   existingTitle : String;
-  scoreGenre : Integer;
 
 begin
-  scoreName := Trim(eName.Text);
-  scorePath := Trim(lRelativeFileName.Text);
-  if scoreName = '' then
+  fileName := Trim(eName.Text);
+  filePath := Trim(lRelativeFileName.Text);
+  if fileName = '' then
   begin
-    FMX.Dialogs.ShowMessage('Enter a name for this PDF.');
+    FMX.Dialogs.ShowMessage('Enter a name for this audio.');
     eName.SetFocus;
     Exit;
   end; // if
-  if scorePath = '' then
+  if filePath = '' then
   begin
-    FMX.Dialogs.ShowMessage('Choose a PDF file.');
+    FMX.Dialogs.ShowMessage('Choose an audio file.');
     Exit;
   end; // if
 
   fullFile := TPath.Combine(
-    progConfig.ReadString('Files', 'PDF Dir', TPath.GetDocumentsPath),
-    scorePath);
+    progConfig.ReadString('Files', 'Audio Dir', TPath.GetDocumentsPath),
+    filePath);
   if not TFile.Exists(fullFile) then
   begin
-    FMX.Dialogs.ShowMessage('The PDF file could not be found.');
+    FMX.Dialogs.ShowMessage('The audio file could not be found.');
     Exit;
   end; // if
   try
-    scoreHash := HashFile(fullFile);
+    fileHash := HashFile(fullFile);
   except
-    FMX.Dialogs.ShowMessage('The PDF file could not be read.');
+    FMX.Dialogs.ShowMessage('The audio file could not be read.');
     Exit;
   end; // try
 
-  if cbGenre.ItemIndex >= 0 then
-    scoreGenre := NativeInt(cbGenre.Items.Objects[cbGenre.ItemIndex])
-  else
-    scoreGenre := Ord(TYPE_OTHER);
-
-  if addingScore then
+  if addingRecord then
   begin
-    if ScoreAlreadyListed(scoreHash, scorePath, existingTitle) then
+    if FileAlreadyListed(fileHash, filePath, existingTitle) then
     begin
       if MessageDlg(
            Format(
-             'This PDF is already in the list as "%s".%sAdd another entry for it?',
+             'This audio is already in the list as "%s".%sAdd another entry for it?',
              [existingTitle, sLineBreak]),
            TMsgDlgType.mtWarning,
            [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo], 0) <> mrYes then
@@ -892,58 +846,52 @@ begin
     end; // if
   end; // if
 
-  eName.Text := scoreName;
-  if addingScore then
+  eName.Text := fileName;
+  if addingRecord then
   begin
     DataModule1.query.Close;
     DataModule1.query.SQL.Text :=
-      'INSERT INTO scores (title, path, fileHash, alternateTitle, ' +
-      'timeSignature, genre, composer, notes) ' +
+      'INSERT INTO audio (title, path, fileHash, alternateTitle, ' +
+      'performer, notes) ' +
       'VALUES (:title, :path, :fileHash, :alternateTitle, ' +
-      ':timeSignature, :genre, :composer, :notes)';
-    DataModule1.query.ParamByName('title').AsString := scoreName;
-    DataModule1.query.ParamByName('path').AsString := scorePath;
-    DataModule1.query.ParamByName('fileHash').AsString := scoreHash;
+      ':performer, :notes)';
+    DataModule1.query.ParamByName('title').AsString := fileName;
+    DataModule1.query.ParamByName('path').AsString := filePath;
+    DataModule1.query.ParamByName('fileHash').AsString := fileHash;
     DataModule1.query.ParamByName('alternateTitle').AsString :=
       Trim(eAlternateNames.Text);
-    DataModule1.query.ParamByName('timeSignature').AsString :=
-      Trim(eTimeSignature.Text);
-    DataModule1.query.ParamByName('genre').AsInteger := scoreGenre;
-    DataModule1.query.ParamByName('composer').AsString :=
-      Trim(eComposer.Text);
+    DataModule1.query.ParamByName('performer').AsString :=
+      Trim(ePerformer.Text);
     DataModule1.query.ParamByName('notes').AsString := memNotes.Text;
   end // if
   else
   begin
     row := sgFiles.Selected;
-    if (row < 0) or (row >= Length(scoreDetails)) then
+    if (row < 0) or (row >= Length(recordDetails)) then
       Exit;
-    savedId := scoreDetails[row].Id;
+    savedId := recordDetails[row].Id;
     DataModule1.query.Close;
     DataModule1.query.SQL.Text :=
-      'UPDATE scores ' +
+      'UPDATE audio ' +
       'SET title = :title, path = :path, fileHash = :fileHash, ' +
-      'alternateTitle = :alternateTitle, timeSignature = :timeSignature, ' +
-      'genre = :genre, composer = :composer, notes = :notes ' +
+      'alternateTitle = :alternateTitle, ' +
+      'performer = :performer, notes = :notes ' +
       'WHERE id = :id';
-    DataModule1.query.ParamByName('title').AsString := scoreName;
-    DataModule1.query.ParamByName('path').AsString := scorePath;
-    DataModule1.query.ParamByName('fileHash').AsString := scoreHash;
+    DataModule1.query.ParamByName('title').AsString := fileName;
+    DataModule1.query.ParamByName('path').AsString := filePath;
+    DataModule1.query.ParamByName('fileHash').AsString := fileHash;
     DataModule1.query.ParamByName('alternateTitle').AsString :=
       Trim(eAlternateNames.Text);
-    DataModule1.query.ParamByName('timeSignature').AsString :=
-      Trim(eTimeSignature.Text);
-    DataModule1.query.ParamByName('genre').AsInteger := scoreGenre;
-    DataModule1.query.ParamByName('composer').AsString :=
-      Trim(eComposer.Text);
+    DataModule1.query.ParamByName('performer').AsString :=
+      Trim(ePerformer.Text);
     DataModule1.query.ParamByName('notes').AsString := memNotes.Text;
     DataModule1.query.ParamByName('id').AsLargeInt := savedId;
-    DataModule1.query.ExecSQL;
   end; // else
+  DataModule1.query.ExecSQL;
 
-  addingScore := False;
+  addingRecord := False;
   SetEditing(FALSE);
-  LoadScores(savedId);
+  LoadRecords(savedId);
 end; // bAcceptClick
 
 end.

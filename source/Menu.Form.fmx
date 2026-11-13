@@ -4,7 +4,7 @@ object fMenu: TfMenu
   BorderStyle = None
   Caption = 'fMenu'
   ClientHeight = 284
-  ClientWidth = 196
+  ClientWidth = 280
   Position = ScreenCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -14,8 +14,8 @@ object fMenu: TfMenu
   object bAbout: TButton
     StyledSettings = [Style, FontColor]
     ModalResult = 1
-    Position.X = 100.000000000000000000
-    Position.Y = 10.000000000000000000
+    Position.X = 190.000000000000000000
+    Position.Y = 100.000000000000000000
     Size.Width = 80.000000000000000000
     Size.Height = 80.000000000000000000
     Size.PlatformDefault = False
@@ -28,9 +28,9 @@ object fMenu: TfMenu
     ShowHint = True
     OnClick = bAboutClick
   end
-  object bFiles: TButton
+  object bPDFs: TButton
     StyledSettings = [Style, FontColor]
-    Hint = 'Files'
+    Hint = 'PDF files'
     ModalResult = 1
     Position.X = 10.000000000000000000
     Position.Y = 10.000000000000000000
@@ -44,12 +44,12 @@ object fMenu: TfMenu
     TextSettings.Trimming = None
     ParentShowHint = False
     ShowHint = True
-    OnClick = bFilesClick
+    OnClick = bPDFsClick
   end
   object bExit: TButton
     StyledSettings = [Style, FontColor]
     ModalResult = 1
-    Position.X = 100.000000000000000000
+    Position.X = 190.000000000000000000
     Position.Y = 190.000000000000000000
     Size.Width = 80.000000000000000000
     Size.Height = 80.000000000000000000
@@ -72,7 +72,7 @@ object fMenu: TfMenu
     Size.Width = 80.000000000000000000
     Size.Height = 80.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 3
+    TabOrder = 4
     Text = #57720
     TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
     TextSettings.Font.Size = 30.000000000000000000
@@ -85,11 +85,11 @@ object fMenu: TfMenu
     StyledSettings = [Style, FontColor]
     ModalResult = 1
     Position.X = 100.000000000000000000
-    Position.Y = 100.000000000000000000
+    Position.Y = 10.000000000000000000
     Size.Width = 80.000000000000000000
     Size.Height = 80.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 4
+    TabOrder = 5
     Text = #61459
     TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
     TextSettings.Font.Size = 30.000000000000000000
@@ -102,12 +102,12 @@ object fMenu: TfMenu
     Cancel = True
     StyledSettings = [Style, FontColor]
     ModalResult = 2
-    Position.X = 10.000000000000000000
-    Position.Y = 190.000000000000000000
+    Position.X = 190.000000000000000000
+    Position.Y = 10.000000000000000000
     Size.Width = 80.000000000000000000
     Size.Height = 80.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 5
+    TabOrder = 6
     Text = #61536
     TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
     TextSettings.Font.Size = 30.000000000000000000
@@ -115,5 +115,23 @@ object fMenu: TfMenu
     ParentShowHint = False
     ShowHint = True
     OnClick = bBackClick
+  end
+  object bAudio: TButton
+    StyledSettings = [Style, FontColor]
+    Hint = 'Audio files'
+    ModalResult = 1
+    Position.X = 10.000000000000000000
+    Position.Y = 190.000000000000000000
+    Size.Width = 80.000000000000000000
+    Size.Height = 80.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Text = #61441
+    TextSettings.Font.Family = 'Font Awesome 6 Pro Solid'
+    TextSettings.Font.Size = 30.000000000000000000
+    TextSettings.Trimming = None
+    ParentShowHint = False
+    ShowHint = True
+    OnClick = bAudioClick
   end
 end
